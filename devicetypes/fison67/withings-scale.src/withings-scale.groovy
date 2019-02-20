@@ -37,11 +37,17 @@ metadata {
         capability "Temperature Measurement"		
         
         attribute "status", "number"
+        attribute "height", "number"
         attribute "weight", "number"
         attribute "fat_free_mass", "number"
         attribute "fat_ratio", "number"
+        attribute "fat_mass_weight", "number"
         attribute "body_temperature", "number"
         attribute "skin_temperature", "number"
+        attribute "blood_pressure_max", "number"
+        attribute "blood_pressure_min", "number"
+        attribute "heart_rate", "number"
+        
         
         attribute "lastCheckin", "Date"
 	}
@@ -73,6 +79,13 @@ metadata {
             state("val", label:'${currentValue}', defaultState: true
             )
         }
+        valueTile("height_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Weight'
+        }   
+        valueTile("height", "device.height", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
         valueTile("fat_free_mass_label", "", decoration: "flat", width: 3, height: 1) {
             state "default", label:'Fat Free Mass'
         }    
@@ -87,6 +100,13 @@ metadata {
             state("val", label:'${currentValue}', defaultState: true
             )
         }
+        valueTile("fat_mass_weight_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Fat Mass Weight'
+        }    
+        valueTile("fat_mass_weight", "device.fat_mass_weight", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
         valueTile("body_temperature_label", "", decoration: "flat", width: 3, height: 1) {
             state "default", label:'Body Temperature'
         }    
@@ -98,6 +118,27 @@ metadata {
             state "default", label:'Skin Temperature'
         }    
         valueTile("skin_temperature", "device.skin_temperature", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
+        valueTile("blood_pressure_max_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Blood Pressure Max'
+        }    
+        valueTile("blood_pressure_max", "device.blood_pressure_max", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
+        valueTile("blood_pressure_min_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Blood Pressure Min'
+        }    
+        valueTile("blood_pressure_min", "device.blood_pressure_min", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
+        valueTile("heart_rate_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Heart Rate'
+        }    
+        valueTile("heart_rate", "device.heart_rate", width: 3, height: 1, unit: "") {
             state("val", label:'${currentValue}', defaultState: true
             )
         }
@@ -136,55 +177,48 @@ def _getData(){
         if(result.status == 0){
         	log.debug result
             
-            def type1Val, type5Val, type6Val, type8Val, type12Val,type71Val, type73Val
-            def type1Check = false, type5Check = false, type6Check = false, type8Check = false, type12Check = false, type71Check = false, type73Check = false
+            def type1Check = false,  type4Check = false, type5Check = false, type6Check = false, type8Check = false, type9Check = false, type10Check = false, type11Check = false, type12Check = false, type71Check = false, type73Check = false
             def list = result.body.measuregrps
             list.each { item ->
             	def subList = item.measures
                 subList.each { subItem ->
                     if(subItem.type == 1 && type1Check == false){
-                        type1Val = (subItem.value / 1000)
+                        sendEvent(name: "status", value: (subItem.value / 1000))
+                        sendEvent(name: "weight", value: (subItem.value / 1000))
                         type1Check = true
+                    }else if(subItem.type == 4 && type4Check == false){
+        				sendEvent(name: "height", value: subItem.value)
+                        type4Check = true
                     }else if(subItem.type == 5 && type5Check == false){
-                        type5Val = (subItem.value / 1000)
+        				sendEvent(name: "fat_free_mass", value: (subItem.value / 1000))
                         type5Check = true
                     }else if(subItem.type == 6 && type6Check == false){
-                        type6Val = (subItem.value / 1000)
+        				sendEvent(name: "fat_ratio", value: (subItem.value / 1000))
                         type6Check = true
                     }else if(subItem.type == 8 && type8Check == false){
-                        type8Val = (subItem.value / 1000)
+        				sendEvent(name: "fat_mass_weight", value: (subItem.value / 1000))
                         type8Check = true
+                    }else if(subItem.type == 9 && type9Check == false){
+        				sendEvent(name: "blood_pressure_max", value: subItem.value)
+                        type9Check = true
+                    }else if(subItem.type == 10 && type10Check == false){
+        				sendEvent(name: "blood_pressure_min", value: subItem.value)
+                        type10Check = true
+                    }else if(subItem.type == 11 && type11Check == false){
+        				sendEvent(name: "heart_rate", value: subItem.value)
+                        type11Check = true
                     }else if(subItem.type == 12 && type12Check == false){
-                        type12Val = (subItem.value / 1000)
+        				sendEvent(name: "temperature", value: (subItem.value / 1000))
                         type12Check = true
                     }else if(subItem.type == 71 && type71Check == false){
-                        type71Val = (subItem.value / 1000)
+        				sendEvent(name: "body_temperature", value: (subItem.value / 1000))
                         type71Check = true
                     }else if(subItem.type == 73 && type73Check == false){
-                        type73Val = (subItem.value / 1000)
+        				sendEvent(name: "skin_temperature", value: (subItem.value / 1000))
                         type73Check = true
                     }
             	}
             }
-            
-            log.debug "Weight >> ${type1Val}"
-            log.debug "Fat Free Mass (kg) >> ${type5Val}"
-            log.debug "Fat Ratio (%) >> ${type6Val}"
-            log.debug "Fat Mass Weight (kg) >> ${type8Val}"
-            log.debug "Temperature >> ${type12Val}"
-            log.debug "Body Temperature >> ${type71Val}"
-            log.debug "Skin Temperature >> ${type73Val}"
-            
-			
-        	sendEvent(name: "status", value: type1Val)
-        	sendEvent(name: "weight", value: type1Val)
-        	sendEvent(name: "fat_free_mass", value: type5Val)
-        	sendEvent(name: "fat_ratio", value: type6Val)
-        	sendEvent(name: "temperature", value: type12Val)
-        	sendEvent(name: "body_temperature", value: type71Val)
-        	sendEvent(name: "skin_temperature", value: type73Val)
-            
-            
         }else{
         	log.debug result
             parent.getAccessTokenByRefreshToken("user.metrics")
