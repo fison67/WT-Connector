@@ -67,10 +67,10 @@ def setID(id){
 
 def refresh(){
 	log.debug "Refresh"
-    getData()
+    _getData()
 }
 
-def getData(){
+def _getData(){
 	def accessToken = parent.getAccountAccessToken("user.metrics")
     def params = [
     	uri: "https://wbsapi.withings.net/measure?action=getmeas&access_token=${accessToken}&meastype=1"
@@ -89,10 +89,184 @@ def getData(){
     
 }
 
+def getTypeName(type){
+	def name = ""
+	switch(type){
+    case 1:
+    	name = "Weight"
+    	break
+    case 4:
+    	name = "Height"
+    	break
+    case 5:
+    	name = "Lean Mass"
+    	break
+    case 6:
+    	name = "Fat Mass"
+    	break
+    case 7:
+    	name = "Lean Mass"
+    	break
+    case 8:
+    	name = "Fat Mass"
+    	break
+    case 9:
+    	name = "Diastolic Blood Pressure"
+    	break
+    case 10:
+    	name = "Systolic Blood Pressure"
+    	break
+    case 11:
+    	name = "Heart Rate"
+    	break
+    case 12:
+    	name = "Temperature"
+    	break
+    case 13:
+    	name = "Humidity"
+    	break
+    case 15:
+    	name = "Noise"
+    	break
+    case 18:
+    	name = "Weight Objective Speed"
+    	break
+    case 19:
+    	name = "Breastfeeding"
+    	break
+    case 20:
+    	name = "Bottle"
+    	break
+    case 22:
+    	name = "BMI"
+    	break
+    case 35:
+    	name = "CO2"
+    	break
+    case 36:
+    	name = "Steps"
+    	break
+    case 37:
+    	name = "Elevation"
+    	break
+    case 38:
+    	name = "Calories"
+    	break
+    case 39:
+    	name = "Intensity"
+    	break
+    case 40:
+    	name = "Distance"
+    	break
+    case 41:
+    	name = "Descent"
+    	break
+    case 42:
+    	name = "Activity Type"
+    	break
+    case 43:
+    	name = "Duration"
+    	break
+    case 44:
+    	name = "Sleep State"
+    	break
+    case 46:
+    	name = "User Event"
+    	break
+    case 47:
+    	name = "Meal Calories"
+    	break
+    case 48:
+    	name = "Active Calories"
+    	break
+    case 49:
+    	name = "Idle Calories"
+    	break
+    case 50:
+    	name = "Inactive Duration"
+    	break
+    case 51:
+    	name = "Light Activity"
+    	break
+    case 52:
+    	name = "Moderate Activity"
+    	break
+    case 53:
+    	name = "Intense Activity"
+    	break
+    case 54:
+    	name = "SpO2"
+    	break
+    case 56:
+    	name = "Ambient light"
+    	break
+    case 57:
+    	name = "Respiratory rate"
+    	break
+    case 58:
+    	name = "Air Quality"
+    	break
+    case 60:
+    	name = "PIM movement"
+    	break
+    case 61:
+    	name = "Maximum movement"
+    	break
+    case 66:
+    	name = "Pressure"
+    	break
+    case 71:
+    	name = "Body Temperature"
+    	break
+    case 72:
+    	name = "GPS Speed"
+    	break
+    case 73:
+    	name = "Skin Temperature"
+    	break
+    case 76:
+    	name = "Muscle Mass"
+    	break
+    case 77:
+    	name = "Water Mass"
+    	break
+    case 87:
+    	name = "Active Calories"
+    	break
+    case 88:
+    	name = "Bone Mass"
+    	break
+    case 91:
+    	name = "Pulse Wave Velocity"
+    	break
+    case 93:
+    	name = "Muscle Mass"
+    	break
+    case 94:
+    	name = "Bone Mass"
+    	break
+    case 95:
+    	name = "Hydration"
+    	break
+    case 96:
+    	name = "Horizontal Radius"
+    	break
+    case 97:
+    	name = "Altitude"
+    	break
+    case 98:
+    	name = "Latitude"
+    	break
+    case 99:
+    	name = "Longitude"
+    	break
+    }
+}
+
 def updated() {
 	unschedule()
 //    log.debug "Request data every ${pollingTime} hour " 
-    schedule("* * * * * ?", getData)
+    schedule("* * * * * ?", _getData)
 }
 
 def getDateArray(day){
