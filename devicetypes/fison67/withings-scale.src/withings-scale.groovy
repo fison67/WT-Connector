@@ -39,6 +39,7 @@ metadata {
         attribute "status", "number"
         attribute "height", "number"
         attribute "weight", "number"
+        attribute "bmi", "number"
         attribute "fat_free_mass", "number"
         attribute "fat_ratio", "number"
         attribute "fat_mass_weight", "number"
@@ -83,6 +84,13 @@ metadata {
             state "default", label:'Weight'
         }   
         valueTile("height", "device.height", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
+        valueTile("bmi_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'BMI'
+        }   
+        valueTile("bmi", "device.bmi", width: 3, height: 1, unit: "") {
             state("val", label:'${currentValue}', defaultState: true
             )
         }
@@ -219,12 +227,15 @@ def _getData(){
                     }
             	}
             }
+            
+            sendEvent(name: "bmi", value: (device.currentValue("weight") / device.currentValue("height") * 2))
+            
         }else{
         	log.debug result
             parent.getAccessTokenByRefreshToken("user.metrics")
         }
         def time = new Date().format("yyyy-MM-dd HH:mm:ss", location.timeZone)
-        sendEvent(name: "lastCheckin", value: time)
+        sendEvent(name: "lastCheckin", value: time, displayed: false)
     }
     
 }
