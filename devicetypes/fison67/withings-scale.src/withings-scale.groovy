@@ -72,7 +72,7 @@ def refresh(){
 
 def _getData(){
 	def accessToken = parent.getAccountAccessToken("user.metrics")    
-   	def dateInfo = getDateArray(1)
+   	def dateInfo = getDateArray(5)
     def first = dateInfo[0], end = dateInfo[1]
     def params = [
     	uri: "https://wbsapi.withings.net/measure?action=getmeas&access_token=${accessToken}&category=1&startdate=${first}&enddate=${end}"
@@ -82,6 +82,40 @@ def _getData(){
         def result =  new JsonSlurper().parseText(resp.data.text)
         if(result.status == 0){
         	log.debug result
+            
+            def type1Val, type5Val, type6Val, type8Val, type71Val, type73Val
+            def typeCheck = [1, 5, 6, 8, 71, 73]
+            def type1Check = false, type5Check = false, type6Check = false, type8Check = false, type71Check = false, type73Check = false
+            def list = result.body.measuregrps
+            list.each { item ->
+            	if(item.type == 1 && type1Check == false){
+                	type1Val = item.fw / 10
+                	type1Check = true
+                }else if(item.type == 5 && type5Check == false){
+                	type5Val = item.value
+                	type5Check = true
+                }else if(item.type == 6 && type6Check == false){
+                	type6Val = item.value
+                	type6Check = true
+                }else if(item.type == 8 && type8Check == false){
+                	type8Val = item.value
+                	type8Check = true
+                }else if(item.type == 71 && type71Check == false){
+                	type71Val = item.value
+                	type71Check = true
+                }else if(item.type == 73 && type73Check == false){
+                	type73Val = item.value
+                	type73Check = true
+                }
+            }
+            
+            log.debug "Height >> ${type1Val}"
+            log.debug "Lean Mass (kg) >> ${type5Val}"
+            log.debug "Fat Mass (%) >> ${type6Val}"
+            log.debug "Fat Mass (kg) >> ${type8Val}"
+            log.debug "Body Temperature >> ${type71Val}"
+            log.debug "Skin Temperature >> ${type73Val}"
+            
         }else{
         	log.debug result
             parent.getAccessTokenByRefreshToken("user.metrics")
