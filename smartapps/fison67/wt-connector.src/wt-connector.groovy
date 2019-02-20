@@ -260,6 +260,8 @@ def getDeviceData(){
                     def dth = ""
                     if(device.type == "Sleep Monitor"){
                        dth = "Withings Sleep Sensor"; 
+                    }else if(device.type == "Scale"){
+                       dth = "Withings Scale"; 
                     }
                     
                     if(!exist && dth != ""){
