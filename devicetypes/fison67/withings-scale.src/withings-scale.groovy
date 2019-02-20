@@ -183,48 +183,62 @@ def _getData(){
     httpGet(params) { resp ->
         def result =  new JsonSlurper().parseText(resp.data.text)
         if(result.status == 0){
-        	log.debug result
+        //	log.debug result
             
             def type1Check = false,  type4Check = false, type5Check = false, type6Check = false, type8Check = false, type9Check = false, type10Check = false, type11Check = false, type12Check = false, type71Check = false, type73Check = false
             def list = result.body.measuregrps
             list.each { item ->
             	def subList = item.measures
                 subList.each { subItem ->
-                    if(subItem.type == 1 && type1Check == false){
-                        sendEvent(name: "status", value: (subItem.value / 1000))
-                        sendEvent(name: "weight", value: (subItem.value / 1000))
-                        type1Check = true
-                    }else if(subItem.type == 4 && type4Check == false){
-        				sendEvent(name: "height", value: subItem.value / 10)
-                        type4Check = true
-                    }else if(subItem.type == 5 && type5Check == false){
-        				sendEvent(name: "fat_free_mass", value: (subItem.value / 1000))
-                        type5Check = true
-                    }else if(subItem.type == 6 && type6Check == false){
-        				sendEvent(name: "fat_ratio", value: (subItem.value / 1000))
-                        type6Check = true
-                    }else if(subItem.type == 8 && type8Check == false){
-        				sendEvent(name: "fat_mass_weight", value: (subItem.value / 1000))
-                        type8Check = true
-                    }else if(subItem.type == 9 && type9Check == false){
-        				sendEvent(name: "blood_pressure_max", value: (subItem.value / 1000))
-                        type9Check = true
-                    }else if(subItem.type == 10 && type10Check == false){
-        				sendEvent(name: "blood_pressure_min", value: (subItem.value / 1000))
-                        type10Check = true
-                    }else if(subItem.type == 11 && type11Check == false){
-        				sendEvent(name: "heart_rate", value: (subItem.value / 1000))
-                        type11Check = true
-                    }else if(subItem.type == 12 && type12Check == false){
-        				sendEvent(name: "temperature", value: (subItem.value / 1000))
-                        type12Check = true
-                    }else if(subItem.type == 71 && type71Check == false){
-        				sendEvent(name: "body_temperature", value: (subItem.value / 1000))
-                        type71Check = true
-                    }else if(subItem.type == 73 && type73Check == false){
-        				sendEvent(name: "skin_temperature", value: (subItem.value / 1000))
-                        type73Check = true
+                	if(subItem.deviceid == state._device_id){
+                    	if(subItem.type == 1 && type1Check == false){
+                            sendEvent(name: "status", value: (subItem.value / 1000))
+                            sendEvent(name: "weight", value: (subItem.value / 1000))
+                            log.debug "Weight >> " + (subItem.value / 1000)
+                            type1Check = true
+                        }else if(subItem.type == 4 && type4Check == false){
+                            sendEvent(name: "height", value: subItem.value / 10)
+                            log.debug "Height >> " + (subItem.value / 10)
+                            type4Check = true
+                        }else if(subItem.type == 5 && type5Check == false){
+                            sendEvent(name: "fat_free_mass", value: (subItem.value / 1000))
+                            log.debug "Fat Free Mass >> " + (subItem.value / 1000)
+                            type5Check = true
+                        }else if(subItem.type == 6 && type6Check == false){
+                            sendEvent(name: "fat_ratio", value: (subItem.value / 1000))
+                            log.debug "Fat Ratio >> " + (subItem.value / 1000)
+                            type6Check = true
+                        }else if(subItem.type == 8 && type8Check == false){
+                            sendEvent(name: "fat_mass_weight", value: (subItem.value / 1000))
+                            log.debug "Fat Mass Weight >> " + (subItem.value / 1000)
+                            type8Check = true
+                        }else if(subItem.type == 9 && type9Check == false){
+                            sendEvent(name: "blood_pressure_max", value: (subItem.value / 1000))
+                            log.debug "Blood Pressure Max >> " + (subItem.value / 1000)
+                            type9Check = true
+                        }else if(subItem.type == 10 && type10Check == false){
+                            sendEvent(name: "blood_pressure_min", value: (subItem.value / 1000))
+                            log.debug "Blood Pressure Min >> " + (subItem.value / 1000)
+                            type10Check = true
+                        }else if(subItem.type == 11 && type11Check == false){
+                            sendEvent(name: "heart_rate", value: (subItem.value / 1000))
+                            log.debug "Heart Rate >> " + (subItem.value / 1000)
+                            type11Check = true
+                        }else if(subItem.type == 12 && type12Check == false){
+                            sendEvent(name: "temperature", value: (subItem.value / 1000))
+                            log.debug "Temperature >> " + (subItem.value / 1000)
+                            type12Check = true
+                        }else if(subItem.type == 71 && type71Check == false){
+                            sendEvent(name: "body_temperature", value: (subItem.value / 1000))
+                            log.debug "Body Temperature >> " + (subItem.value / 1000)
+                            type71Check = true
+                        }else if(subItem.type == 73 && type73Check == false){
+                            sendEvent(name: "skin_temperature", value: (subItem.value / 1000))
+                            log.debug "Skin Temperature >> " + (subItem.value / 1000)
+                            type73Check = true
+                        }
                     }
+                    
             	}
             }
             
