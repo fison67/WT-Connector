@@ -223,8 +223,8 @@ def _getData(){
                             log.debug "Blood Pressure Min >> " + (subItem.value / 1000)
                             type10Check = true
                         }else if(subItem.type == 11 && type11Check == false){
-                            sendEvent(name: "heart_rate", value: (subItem.value / 1000))
-                            log.debug "Heart Rate >> " + (subItem.value / 1000)
+                            sendEvent(name: "heart_rate", value: (subItem.value ))
+                            log.debug "Heart Rate >> " + (subItem.value)
                             type11Check = true
                         }else if(subItem.type == 12 && type12Check == false){
                             sendEvent(name: "temperature", value: (subItem.value / 1000))
