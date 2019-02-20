@@ -158,27 +158,19 @@ def getUserHealth(){
     httpGet(params) { resp ->
         def result =  new JsonSlurper().parseText(resp.data.text)
         if(result.status == 0){
+        	log.debug result
         	def data = result.body.activities[0]
-            def calories = data.calories
-            def distance = data.distance
-            def elevation = data.elevation
-            def intense = data.intense
-            def moderate = data.moderate
-            def soft = data.soft
-            def steps = data.steps
-            def totalcalories = data.totalcalories
             
-    		sendEvent(name:"status", value: data.steps )
-            
-    		sendEvent(name:"calories", value: data.calories as int )
-    		sendEvent(name:"distance", value: data.distance as int )
-    		sendEvent(name:"elevation", value: data.elevation )
-    		sendEvent(name:"intense", value: data.intense )
-    		sendEvent(name:"moderate", value: data.moderate )
-    		sendEvent(name:"soft", value: data.soft )
-    		sendEvent(name:"steps", value: data.steps )
-    		sendEvent(name:"totalcalories", value: data.totalcalories as int)
-            log.debug result.body.activities
+    		try{ sendEvent(name:"status", value: data.steps ) }catch(err){}
+           
+    		try{ sendEvent(name:"calories", value: data.calories as int ) }catch(err){}
+    		try{ sendEvent(name:"distance", value: data.distance as int ) }catch(err){}
+    		try{ sendEvent(name:"elevation", value: data.elevation ) }catch(err){}
+    		try{ sendEvent(name:"intense", value: data.intense ) }catch(err){}
+    		try{ sendEvent(name:"moderate", value: data.moderate ) }catch(err){}
+    		try{ sendEvent(name:"soft", value: data.soft ) }catch(err){}
+    		try{ sendEvent(name:"steps", value: data.steps ) }catch(err){}
+    		try{ sendEvent(name:"totalcalories", value: data.totalcalories as int) }catch(err){}
         }else{
         	log.debug result
             parent.getAccessTokenByRefreshToken("user.activity")
@@ -201,7 +193,7 @@ def getDateArray(day){
     def now = new Date()
     use (groovy.time.TimeCategory) {
         first =  (int)((now - day.days).getTime() / 1000)
-        end =  (int)((now + 1.days).getTime() / 1000)
+        end =  (int)((now + day.days).getTime() / 1000)
     }
     return [first, end]
 }
