@@ -71,10 +71,13 @@ def refresh(){
 }
 
 def _getData(){
-	def accessToken = parent.getAccountAccessToken("user.metrics")
+	def accessToken = parent.getAccountAccessToken("user.metrics")    
+   	def dateInfo = getDateArray(1)
+    def first = dateInfo[0], end = dateInfo[1]
     def params = [
-    	uri: "https://wbsapi.withings.net/measure?action=getmeas&access_token=${accessToken}&meastype=1"
+    	uri: "https://wbsapi.withings.net/measure?action=getmeas&access_token=${accessToken}&meastype=1&startdate=${first}&enddate=${end}"
     ]
+    log.debug "URL >> ${params}" 
     httpGet(params) { resp ->
         def result =  new JsonSlurper().parseText(resp.data.text)
         if(result.status == 0){
@@ -275,7 +278,7 @@ def getDateArray(day){
     def now = new Date()
     use (groovy.time.TimeCategory) {
         first =  (int)((now - day.days).getTime() / 1000)
-        end =  (int)((now + 1.days).getTime() / 1000)
+        end =  (int)((now + day.days).getTime() / 1000)
     }
     return [first, end]
 }
