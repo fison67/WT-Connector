@@ -81,7 +81,7 @@ metadata {
             )
         }
         valueTile("height_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Weight'
+            state "default", label:'Height'
         }   
         valueTile("height", "device.height", width: 3, height: 1, unit: "") {
             state("val", label:'${currentValue}', defaultState: true
@@ -195,7 +195,7 @@ def _getData(){
                         sendEvent(name: "weight", value: (subItem.value / 1000))
                         type1Check = true
                     }else if(subItem.type == 4 && type4Check == false){
-        				sendEvent(name: "height", value: subItem.value)
+        				sendEvent(name: "height", value: subItem.value / 10)
                         type4Check = true
                     }else if(subItem.type == 5 && type5Check == false){
         				sendEvent(name: "fat_free_mass", value: (subItem.value / 1000))
@@ -207,13 +207,13 @@ def _getData(){
         				sendEvent(name: "fat_mass_weight", value: (subItem.value / 1000))
                         type8Check = true
                     }else if(subItem.type == 9 && type9Check == false){
-        				sendEvent(name: "blood_pressure_max", value: subItem.value)
+        				sendEvent(name: "blood_pressure_max", value: (subItem.value / 1000))
                         type9Check = true
                     }else if(subItem.type == 10 && type10Check == false){
-        				sendEvent(name: "blood_pressure_min", value: subItem.value)
+        				sendEvent(name: "blood_pressure_min", value: (subItem.value / 1000))
                         type10Check = true
                     }else if(subItem.type == 11 && type11Check == false){
-        				sendEvent(name: "heart_rate", value: subItem.value)
+        				sendEvent(name: "heart_rate", value: (subItem.value / 1000))
                         type11Check = true
                     }else if(subItem.type == 12 && type12Check == false){
         				sendEvent(name: "temperature", value: (subItem.value / 1000))
