@@ -143,25 +143,25 @@ def _getData(){
             	def subList = item.measures
                 subList.each { subItem ->
                     if(subItem.type == 1 && type1Check == false){
-                        type1Val = (subItem.value / 100)
+                        type1Val = (subItem.value / 1000)
                         type1Check = true
                     }else if(subItem.type == 5 && type5Check == false){
-                        type5Val = (subItem.value / 100)
+                        type5Val = (subItem.value / 1000)
                         type5Check = true
                     }else if(subItem.type == 6 && type6Check == false){
-                        type6Val = (subItem.value / 100)
+                        type6Val = (subItem.value / 1000)
                         type6Check = true
                     }else if(subItem.type == 8 && type8Check == false){
-                        type8Val = (subItem.value / 100)
+                        type8Val = (subItem.value / 1000)
                         type8Check = true
                     }else if(subItem.type == 12 && type12Check == false){
-                        type12Val = (subItem.value / 100)
+                        type12Val = (subItem.value / 1000)
                         type12Check = true
                     }else if(subItem.type == 71 && type71Check == false){
-                        type71Val = (subItem.value / 100)
+                        type71Val = (subItem.value / 1000)
                         type71Check = true
                     }else if(subItem.type == 73 && type73Check == false){
-                        type73Val = (subItem.value / 100)
+                        type73Val = (subItem.value / 1000)
                         type73Check = true
                     }
             	}
