@@ -180,6 +180,7 @@ def _getData(){
     	uri: "https://wbsapi.withings.net/measure?action=getmeas&access_token=${accessToken}&category=1&startdate=${first}&enddate=${end}"
     ]
     log.debug "URL >> ${params}" 
+    log.debug "ID: ${state._device_id}"
     httpGet(params) { resp ->
         def result =  new JsonSlurper().parseText(resp.data.text)
         if(result.status == 0){
@@ -190,6 +191,7 @@ def _getData(){
             list.each { item ->
             	def subList = item.measures
                 subList.each { subItem ->
+    				log.debug "Data DevID: ${subItem.deviceid}"
                 	if(subItem.deviceid == state._device_id){
                     	if(subItem.type == 1 && type1Check == false){
                             sendEvent(name: "status", value: (subItem.value / 1000))
