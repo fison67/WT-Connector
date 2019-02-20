@@ -49,17 +49,38 @@ metadata {
 		}
         
          
-        valueTile("height_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Height'
+        valueTile("weight_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Weight'
         }   
         valueTile("height", "device.height", width: 3, height: 1, unit: "") {
             state("val", label:'${currentValue}', defaultState: true
             )
         }
-        valueTile("lean_mass_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Lean Mass'
+        valueTile("fat_free_mass_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Fat Free Mass'
         }    
-        valueTile("lean_mass", "device.lean_mass", width: 3, height: 1, unit: "") {
+        valueTile("fat_free_mass", "device.fat_free_mass", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
+        valueTile("fat_ratio_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Fat Ratio'
+        }    
+        valueTile("fat_ratio", "device.fat_ratio", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
+        valueTile("body_temperature_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Body Temperature'
+        }    
+        valueTile("body_temperature", "device.body_temperature", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
+        valueTile("skin_temperature_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Skin Temperature'
+        }    
+        valueTile("skin_temperature", "device.skin_temperature", width: 3, height: 1, unit: "") {
             state("val", label:'${currentValue}', defaultState: true
             )
         }
@@ -99,36 +120,37 @@ def _getData(){
         	log.debug result
             
             def type1Val, type5Val, type6Val, type8Val, type71Val, type73Val
-            def typeCheck = [1, 5, 6, 8, 71, 73]
             def type1Check = false, type5Check = false, type6Check = false, type8Check = false, type71Check = false, type73Check = false
             def list = result.body.measuregrps
             list.each { item ->
-            	def measure = item.measures
-            	if(measure.type == 1 && type1Check == false){
-                	type1Val = measure.fw / 10
-                	type1Check = true
-                }else if(measure.type == 5 && type5Check == false){
-                	type5Val = measure.value
-                	type5Check = true
-                }else if(measure.type == 6 && type6Check == false){
-                	type6Val = measure.value
-                	type6Check = true
-                }else if(measure.type == 8 && type8Check == false){
-                	type8Val = measure.value
-                	type8Check = true
-                }else if(measure.type == 71 && type71Check == false){
-                	type71Val = measure.value
-                	type71Check = true
-                }else if(measure.type == 73 && type73Check == false){
-                	type73Val = measure.value
-                	type73Check = true
-                }
+            	def subList = item.measures
+                subList.each { subItem ->
+                    if(subItem.type == 1 && type1Check == false){
+                        type1Val = subItem.value
+                        type1Check = true
+                    }else if(subItem.type == 5 && type5Check == false){
+                        type5Val = subItem.value
+                        type5Check = true
+                    }else if(subItem.type == 6 && type6Check == false){
+                        type6Val = subItem.value
+                        type6Check = true
+                    }else if(subItem.type == 8 && type8Check == false){
+                        type8Val = subItem.value
+                        type8Check = true
+                    }else if(subItem.type == 71 && type71Check == false){
+                        type71Val = subItem.value
+                        type71Check = true
+                    }else if(subItem.type == 73 && type73Check == false){
+                        type73Val = subItem.value
+                        type73Check = true
+                    }
+            	}
             }
             
-            log.debug "Height >> ${type1Val}"
-            log.debug "Lean Mass (kg) >> ${type5Val}"
-            log.debug "Fat Mass (%) >> ${type6Val}"
-            log.debug "Fat Mass (kg) >> ${type8Val}"
+            log.debug "Weight >> ${type1Val}"
+            log.debug "Fat Free Mass (kg) >> ${type5Val}"
+            log.debug "Fat Ratio (%) >> ${type6Val}"
+            log.debug "Fat Mass Weight (kg) >> ${type8Val}"
             log.debug "Body Temperature >> ${type71Val}"
             log.debug "Skin Temperature >> ${type73Val}"
             
