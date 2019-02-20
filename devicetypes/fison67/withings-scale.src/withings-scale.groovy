@@ -33,7 +33,8 @@ import java.text.DateFormat
 metadata {
 	definition (name: "Withings Scale", namespace: "fison67", author: "fison67") {
       	capability "Sensor"
-        capability "Refresh"		
+        capability "Refresh"	
+        capability "Temperature Measurement"		
         
         attribute "status", "number"
         attribute "weight", "number"
@@ -135,8 +136,8 @@ def _getData(){
         if(result.status == 0){
         	log.debug result
             
-            def type1Val, type5Val, type6Val, type8Val, type71Val, type73Val
-            def type1Check = false, type5Check = false, type6Check = false, type8Check = false, type71Check = false, type73Check = false
+            def type1Val, type5Val, type6Val, type8Val, type12Val,type71Val, type73Val
+            def type1Check = false, type5Check = false, type6Check = false, type8Check = false, type12Check = false, type71Check = false, type73Check = false
             def list = result.body.measuregrps
             list.each { item ->
             	def subList = item.measures
@@ -153,6 +154,9 @@ def _getData(){
                     }else if(subItem.type == 8 && type8Check == false){
                         type8Val = (subItem.value / 100).round(2)
                         type8Check = true
+                    }else if(subItem.type == 12 && type12Check == false){
+                        type12Val = (subItem.value / 100).round(2)
+                        type12Check = true
                     }else if(subItem.type == 71 && type71Check == false){
                         type71Val = (subItem.value / 100).round(2)
                         type71Check = true
@@ -167,6 +171,7 @@ def _getData(){
             log.debug "Fat Free Mass (kg) >> ${type5Val}"
             log.debug "Fat Ratio (%) >> ${type6Val}"
             log.debug "Fat Mass Weight (kg) >> ${type8Val}"
+            log.debug "Temperature >> ${type12Val}"
             log.debug "Body Temperature >> ${type71Val}"
             log.debug "Skin Temperature >> ${type73Val}"
             
@@ -175,6 +180,7 @@ def _getData(){
         	sendEvent(name: "weight", value: type1Val)
         	sendEvent(name: "fat_free_mass", value: type5Val)
         	sendEvent(name: "fat_ratio", value: type6Val)
+        	sendEvent(name: "temperature", value: type12Val)
         	sendEvent(name: "body_temperature", value: type71Val)
         	sendEvent(name: "skin_temperature", value: type73Val)
             
