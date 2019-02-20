@@ -1,19 +1,30 @@
 /**
  *  Withings Scale (v.0.0.1)
  *
- *  Authors
- *   - fison67@nate.com
- *  Copyright 2018
+ * MIT License
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License. You may obtain a copy of the License at:
+ * Copyright (c) 2019 fison67@nate.com
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
- *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
- *  for the specific language governing permissions and limitations under the License.
- *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ * 
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
  */
  
 import groovy.json.JsonSlurper
@@ -25,6 +36,11 @@ metadata {
         capability "Refresh"		
         
         attribute "status", "number"
+        attribute "weight", "number"
+        attribute "fat_free_mass", "number"
+        attribute "fat_ratio", "number"
+        attribute "body_temperature", "number"
+        attribute "skin_temperature", "number"
         
         attribute "lastCheckin", "Date"
 	}
@@ -52,7 +68,7 @@ metadata {
         valueTile("weight_label", "", decoration: "flat", width: 3, height: 1) {
             state "default", label:'Weight'
         }   
-        valueTile("height", "device.height", width: 3, height: 1, unit: "") {
+        valueTile("weight", "device.weight", width: 3, height: 1, unit: "") {
             state("val", label:'${currentValue}', defaultState: true
             )
         }
@@ -126,22 +142,22 @@ def _getData(){
             	def subList = item.measures
                 subList.each { subItem ->
                     if(subItem.type == 1 && type1Check == false){
-                        type1Val = subItem.value
+                        type1Val = (subItem.value / 100).round(2)
                         type1Check = true
                     }else if(subItem.type == 5 && type5Check == false){
-                        type5Val = subItem.value
+                        type5Val = (subItem.value / 100).round(2)
                         type5Check = true
                     }else if(subItem.type == 6 && type6Check == false){
-                        type6Val = subItem.value
+                        type6Val = (subItem.value / 100).round(2)
                         type6Check = true
                     }else if(subItem.type == 8 && type8Check == false){
-                        type8Val = subItem.value
+                        type8Val = (subItem.value / 100).round(2)
                         type8Check = true
                     }else if(subItem.type == 71 && type71Check == false){
-                        type71Val = subItem.value
+                        type71Val = (subItem.value / 100).round(2)
                         type71Check = true
                     }else if(subItem.type == 73 && type73Check == false){
-                        type73Val = subItem.value
+                        type73Val = (subItem.value / 100).round(2)
                         type73Check = true
                     }
             	}
@@ -153,6 +169,15 @@ def _getData(){
             log.debug "Fat Mass Weight (kg) >> ${type8Val}"
             log.debug "Body Temperature >> ${type71Val}"
             log.debug "Skin Temperature >> ${type73Val}"
+            
+			
+        	sendEvent(name: "status", value: type1Val)
+        	sendEvent(name: "weight", value: type1Val)
+        	sendEvent(name: "fat_free_mass", value: type5Val)
+        	sendEvent(name: "fat_ratio", value: type6Val)
+        	sendEvent(name: "body_temperature", value: type71Val)
+        	sendEvent(name: "skin_temperature", value: type73Val)
+            
             
         }else{
         	log.debug result
