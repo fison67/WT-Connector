@@ -48,6 +48,21 @@ metadata {
             }
 		}
         
+         
+        valueTile("height_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Height'
+        }   
+        valueTile("height", "device.height", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
+        valueTile("lean_mass_label", "", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Lean Mass'
+        }    
+        valueTile("lean_mass", "device.lean_mass", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", label:"", action:"refresh", icon:"st.secondary.refresh"
         }
@@ -88,23 +103,24 @@ def _getData(){
             def type1Check = false, type5Check = false, type6Check = false, type8Check = false, type71Check = false, type73Check = false
             def list = result.body.measuregrps
             list.each { item ->
-            	if(item.type == 1 && type1Check == false){
-                	type1Val = item.fw / 10
+            	def measure = item.measures
+            	if(measure.type == 1 && type1Check == false){
+                	type1Val = measure.fw / 10
                 	type1Check = true
-                }else if(item.type == 5 && type5Check == false){
-                	type5Val = item.value
+                }else if(measure.type == 5 && type5Check == false){
+                	type5Val = measure.value
                 	type5Check = true
-                }else if(item.type == 6 && type6Check == false){
-                	type6Val = item.value
+                }else if(measure.type == 6 && type6Check == false){
+                	type6Val = measure.value
                 	type6Check = true
-                }else if(item.type == 8 && type8Check == false){
-                	type8Val = item.value
+                }else if(measure.type == 8 && type8Check == false){
+                	type8Val = measure.value
                 	type8Check = true
-                }else if(item.type == 71 && type71Check == false){
-                	type71Val = item.value
+                }else if(measure.type == 71 && type71Check == false){
+                	type71Val = measure.value
                 	type71Check = true
-                }else if(item.type == 73 && type73Check == false){
-                	type73Val = item.value
+                }else if(measure.type == 73 && type73Check == false){
+                	type73Val = measure.value
                 	type73Check = true
                 }
             }
