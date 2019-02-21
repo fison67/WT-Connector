@@ -29,6 +29,33 @@
  
 import groovy.json.JsonSlurper
 import java.text.DateFormat
+import groovy.transform.Field
+
+
+@Field 
+LANGUAGE_MAP = [
+    "weight": [
+        "Korean": "몸무게",
+        "English": "Weight"
+    ],
+    "fat_free_mass": [
+        "Korean": "제지방량",
+        "English": "Fat Free Mass"
+    ],
+    "fat_ratio": [
+        "Korean": "체지방율",
+        "English": "Fat Ratio"
+    ],
+    "fat_mass_weight": [
+        "Korean": "체지방량",
+        "English": "Fat Mass Weight"
+    ],
+    "heart_rate": [
+        "Korean": "심박수",
+        "English": "Heart Rate"
+    ]
+]
+
 
 metadata {
 	definition (name: "Withings Scale", namespace: "fison67", author: "fison67") {
@@ -56,6 +83,7 @@ metadata {
 	}
     
     preferences {
+        input name: "language", title:"Select a language" , type: "enum", required: true, options: ["English", "Korean"], defaultValue: "English", description:"Language for DTH"
   //      input name: "pollingTime", title:"Polling Time[Hour]" , type: "number", required: true, defaultValue: 1, description:"Polling Hour", range: "1..12"
 	}
 
@@ -71,39 +99,39 @@ metadata {
 		}
         
          
-        valueTile("weight_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Weight'
+        valueTile("weight_label", "weight_label", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'${currentValue}'
         }   
-        valueTile("weight", "device.weight", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
+        valueTile("weight", "device.weight", width: 3, height: 1, unit: "kg") {
+            state("val", label:'${currentValue} kg', defaultState: true
             )
         }
-        valueTile("fat_free_mass_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Fat Free Mass'
+        valueTile("fat_free_mass_label", "fat_free_mass_label", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'${currentValue}'
         }    
-        valueTile("fat_free_mass", "device.fat_free_mass", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
+        valueTile("fat_free_mass", "device.fat_free_mass", width: 3, height: 1, unit: "kg") {
+            state("val", label:'${currentValue} kg', defaultState: true
             )
         }
-        valueTile("fat_ratio_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Fat Ratio'
+        valueTile("fat_ratio_label", "fat_ratio_label", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'${currentValue}'
         }    
-        valueTile("fat_ratio", "device.fat_ratio", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
+        valueTile("fat_ratio", "device.fat_ratio", width: 3, height: 1, unit: "%") {
+            state("val", label:'${currentValue} %', defaultState: true
             )
         }
-        valueTile("fat_mass_weight_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Fat Mass Weight'
+        valueTile("fat_mass_weight_label", "fat_mass_weight_label", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'${currentValue}'
         }    
-        valueTile("fat_mass_weight", "device.fat_mass_weight", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
+        valueTile("fat_mass_weight", "device.fat_mass_weight", width: 3, height: 1, unit: "kg") {
+            state("val", label:'${currentValue} kg', defaultState: true
             )
         }
-        valueTile("heart_rate_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Heart Rate'
+        valueTile("heart_rate_label", "heart_rate_label", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'${currentValue}'
         }    
-        valueTile("heart_rate", "device.heart_rate", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
+        valueTile("heart_rate", "device.heart_rate", width: 3, height: 1, unit: "bpm") {
+            state("val", label:'${currentValue} bpm', defaultState: true
             )
         }
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
@@ -147,20 +175,6 @@ def _getData(){
                 subList.each { subItem ->
                 	if(item.deviceid == state._device_id){
                         def unitVal = 1
-                    	/*
-                        switch(subItem.unit){
-                        case 0:
-                        	break
-                        case -1:
-                        	unitVal = 10
-                        	break
-                        case -2:
-                        	unitVal = 100
-                        	break
-                        case -3:
-                        	unitVal = 1000
-                        	break
-                        }*/
                         def _tmp = subItem.unit
                         while(_tmp < 0){
                         	_tmp++
@@ -227,6 +241,7 @@ def _getData(){
 }
 
 def updated() {
+	setLanguage()
 	unschedule()
 //    log.debug "Request data every ${pollingTime} hour " 
     schedule("* * * * * ?", _getData)
@@ -241,4 +256,15 @@ def getDateArray(day){
         end =  (int)((now + day.days).getTime() / 1000)
     }
     return [first, end]
+}
+
+
+def setLanguage(){
+    log.debug "Languge >> ${language}"
+	
+    sendEvent(name:"weight_label", value: LANGUAGE_MAP["weight"][language] )
+    sendEvent(name:"fat_free_mass_label", value: LANGUAGE_MAP["fat_free_mass"][language] )
+    sendEvent(name:"fat_ratio_label", value: LANGUAGE_MAP["fat_ratio"][language] )
+	sendEvent(name:"fat_mass_weight_label", value: LANGUAGE_MAP["fat_mass_weight"][language] )
+	sendEvent(name:"heart_rate_label", value: LANGUAGE_MAP["heart_rate"][language] )
 }
