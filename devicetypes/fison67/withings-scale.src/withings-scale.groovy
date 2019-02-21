@@ -34,6 +34,10 @@ import groovy.transform.Field
 
 @Field 
 LANGUAGE_MAP = [
+	"last_measure_date": [
+    	"Korean": "측정시간",
+        "English": "Measure Date"
+    ],
     "weight": [
         "Korean": "몸무게",
         "English": "Weight"
@@ -76,6 +80,7 @@ metadata {
         attribute "blood_pressure_min", "number"
         
         attribute "lastCheckin", "Date"
+        attribute "lastMeasureDate", "Date"
 	}
 
 
@@ -98,7 +103,13 @@ metadata {
             }
 		}
         
-         
+        valueTile("last_measure_date_label", "last_measure_date_label", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'${currentValue}'
+        }   
+        valueTile("lastMeasureDate", "device.lastMeasureDate", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
         valueTile("weight_label", "weight_label", decoration: "flat", width: 3, height: 1) {
             state "default", label:'${currentValue}'
         }   
@@ -171,6 +182,8 @@ def _getData(){
             def type1Check = false,  type4Check = false, type5Check = false, type6Check = false, type8Check = false, type9Check = false, type10Check = false, type11Check = false, type12Check = false, type71Check = false, type73Check = false
             def list = result.body.measuregrps
             list.each { item ->
+            //	def date = item.date
+                
             	def subList = item.measures
                 subList.each { subItem ->
                 	if(item.deviceid == state._device_id){
@@ -185,6 +198,9 @@ def _getData(){
                             sendEvent(name: "status", value: (subItem.value / unitVal))
                             sendEvent(name: "weight", value: (subItem.value / unitVal))
                             log.debug "Weight >> " + (subItem.value / unitVal)
+                            
+    						def time = new Date( ((long)item.date) * 1000 ).format("yyyy-MM-dd HH:mm:ss", location.timeZone)
+                            sendEvent(name: "lastMeasureDate", value: time, displayed: false)
                             type1Check = true
                         }else if(subItem.type == 4 && type4Check == false){
                             sendEvent(name: "height", value: subItem.value / unitVal)
@@ -262,6 +278,7 @@ def getDateArray(day){
 def setLanguage(){
     log.debug "Languge >> ${language}"
 	
+    sendEvent(name:"last_measure_date_label", value: LANGUAGE_MAP["last_measure_date"][language] )
     sendEvent(name:"weight_label", value: LANGUAGE_MAP["weight"][language] )
     sendEvent(name:"fat_free_mass_label", value: LANGUAGE_MAP["fat_free_mass"][language] )
     sendEvent(name:"fat_ratio_label", value: LANGUAGE_MAP["fat_ratio"][language] )
