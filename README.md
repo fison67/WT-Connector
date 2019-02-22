@@ -2,8 +2,8 @@
 Connector for Withings devices with [SmartThings](https://www.smartthings.com/getting-started)
 
 ## Supported Devices
-Sleep<br/>
-Scale<br/>
+#### Withings Sleep<br/>
+#### Withings Scale<br/>
 <br/><br/>
 
 ### ScreenShot
