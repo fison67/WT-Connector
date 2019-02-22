@@ -25,6 +25,7 @@ Scale<br/>
 * Click a User Activity Auth & Login
 * Then device is automatically generated
 
+
 ## Donation
 If this project helps you, you can give me a cup of coffee<br/>
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/fison67)
