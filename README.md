@@ -7,17 +7,23 @@ Scale<br/>
 <br/><br/>
 
 
-# Installation
+## Installation
 
-## Prerequisites
+### Prerequisites
 * SmartThings account
 * Withings account
-* Withings developer app (https://account.withings.com/partner/add_oauth2)
+* Withings developer app 
 
-
-
-
-
+### Install
+* Install a Smartapp & DTH on ST IDE.
+* Enable Oauth & Click Config Menu & Copy wt_url
+* Make a Withings developer app (https://account.withings.com/partner/add_oauth2)
+* Set a wt_url to callback url on Withings developer app
+* Set a client id & password to WT Smartapp
+* Click a User Informaton Auth & Login
+* Click a User Metrics Auth & Login
+* Click a User Activity Auth & Login
+* Then device is automatically generated
 
 ## Donation
 If this project helps you, you can give me a cup of coffee<br/>
