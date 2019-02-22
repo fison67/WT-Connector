@@ -22,3 +22,6 @@
 #### Withings Sleep<br/>
 <img src="./slepp1.png?raw=true" title="Withings Sleep" width="500px"><br/>
 <img src="./sleep2.png?raw=true" title="Withings Sleep" width="500px"><br/>
+<br/><br/>
+#### Withings Scale<br/>
+<img src="./scale.png?raw=true" title="Withings Scale" width="500px"><br/>
