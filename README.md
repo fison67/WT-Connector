@@ -6,7 +6,7 @@ Connector for Withings devices with [SmartThings](https://www.smartthings.com/ge
 #### Withings Scale<br/>
 <br/><br/>
 
-### ScreenShot
+## ScreenShot
 #### Withings Sleep<br/>
 <img src="./doc/slepp1.png?raw=true" title="Withings Sleep" width="500px"><br/>
 <img src="./doc/sleep2.png?raw=true" title="Withings Sleep" width="500px"><br/>
@@ -16,12 +16,12 @@ Connector for Withings devices with [SmartThings](https://www.smartthings.com/ge
 
 ## Installation
 
-### Prerequisites
+## Prerequisites
 * SmartThings account
 * Withings account
 * Withings developer app 
 
-### Install
+## Install
 * Install a Smartapp & DTH on ST IDE.
 * Enable Oauth & Click Config Menu & Copy wt_url
 * Make a Withings developer app (https://account.withings.com/partner/add_oauth2)
