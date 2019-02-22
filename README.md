@@ -31,7 +31,7 @@ Scale<br/>
 * Click a User Metrics Auth & Login
 * Click a User Activity Auth & Login
 * Then device is automatically generated
-
+* With screenshots: https://github.com/fison67/WT-Connector/blob/master/doc/README.md
 
 ## Donation
 If this project helps you, you can give me a cup of coffee<br/>
