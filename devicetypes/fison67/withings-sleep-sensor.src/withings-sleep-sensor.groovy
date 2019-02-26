@@ -1,5 +1,5 @@
 /**
- *  Withings Sleep Sensor (v.0.0.1)
+ *  Withings Sleep Sensor (v.0.0.2)
  *
  * MIT License
  *
@@ -117,7 +117,10 @@ metadata {
 	tiles {
 		multiAttributeTile(name:"status", type: "generic", width: 6, height: 4){
 			tileAttribute ("device.status", key: "PRIMARY_CONTROL") {
-            	attributeState("status", label:'${currentValue}', backgroundColor: "#ffffff")
+            	attributeState("awake", label:'Awake', backgroundColor: "#57f90c")
+            	attributeState("light_sleep", label:'Light Sleep', backgroundColor: "#41b5f4")
+            	attributeState("deep_sleep", label:'Deep Sleep', backgroundColor: "#f90caa")
+            	attributeState("rem_sleep", label:'Rem Sleep', backgroundColor: "#7a42f4")
             }
             
             tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
@@ -208,6 +211,7 @@ def setID(id){
 def refresh(){
 	log.debug "refresh"
 	getSleepSummaryData()
+    getSleepData()
 }
 
 def currentStatus(){
@@ -217,18 +221,47 @@ def currentStatus(){
 def getSleepData(){
 	def accessToken = parent.getAccountAccessToken("user.activity")
     
-   	def dateInfo = getDateArray(1)
+   	def dateInfo = getDateMinArray(60 * 6)
     def first = dateInfo[0], end = dateInfo[1]
     
     def params = [
         uri: "https://wbsapi.withings.net/v2/sleep?action=get&access_token=${accessToken}&startdate=${first}&enddate=${end}"
     ]
+    log.debug "SleepData URL >>  ${params.uri}"
     httpGet(params) { resp ->
         def result =  new JsonSlurper().parseText(resp.data.text)
-        log.debug result
-        def list = result.body.series
-      //  log.debug list
+        if(result.status == 0){
+        	def list = result.body.series
         
+            def lastTarget = ["startdate":1]
+            list.each { item ->
+                if(item.startdate > lastTarget.startdate){
+                    lastTarget = item 
+                }
+            }
+            def date = new Date( (long)lastTarget.enddate * 1000)
+            def dateStr = date.format( 'yyyy-MM-dd hh:mm:ss', location.timeZone )
+            
+            def state = ""
+            switch(lastTarget.state){
+            case 0:
+            	state = "awake"
+            	break
+            case 1:
+            	state = "light_sleep"
+            	break
+            case 2:
+            	state = "deep_sleep"
+            	break
+            case 3:
+            	state = "rem_sleep"
+            	break
+            }
+            log.debug "SleepData Result >> ${state} [${dateStr}]"
+            if(state != ""){
+            	sendEvent(name:"status", value: state )
+            }
+        }
     }
 }
 
@@ -248,11 +281,11 @@ def getSleepSummaryData(){
     def params = [
         uri: "https://wbsapi.withings.net/v2/sleep?action=getsummary&access_token=${accessToken}&startdateymd=${start}&enddateymd=${end}"
     ]
-    
+    log.debug "SleepSummaryData URL >>  ${params.uri}"
     httpGet(params) { resp ->
         def result =  new JsonSlurper().parseText(resp.data.text)
         if(result.status == 0){
-        	log.debug result.body.series
+            log.debug "SleepSummaryData Result >> ${result.body.series}"
             def data = result.body.series[0].data
             
             def notSleepTime = msToTime(data.wakeupduration)
@@ -286,7 +319,7 @@ def getSleepSummaryData(){
     		sendEvent(name:"sleep_duration_min", value: sleepTimeTmp[1] as int )
     		sendEvent(name:"sleep_duration_value", value: gap/60 )
             
-    		sendEvent(name:"status", value: sleepTime )
+    	//	sendEvent(name:"status", value: sleepTime )
             
             def remSleepTime = msToTime(data.remsleepduration)
             def remSleepTimeTmp = remSleepTime.split(":")
@@ -297,7 +330,6 @@ def getSleepSummaryData(){
             
             
             def toWakeupTime = msToTime(data.durationtowakeup)
-            log.debug toWakeupTime
             def toWakeupTimeTmp = toWakeupTime.split(":")
     		sendEvent(name:"wakeup_duration_str", value: toWakeupTime )
     		sendEvent(name:"wakeup_duration_hour", value: toWakeupTimeTmp[0] as int  )
@@ -307,7 +339,7 @@ def getSleepSummaryData(){
     		sendEvent(name:"wakeupcount", value: data.wakeupcount )
             
 			def timezone = TimeZone.getTimeZone(result.body.series[0].timezone)
-    		SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss"); // YYYY-MM-dd 
+    		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss"); // YYYY-MM-dd 
             sdf.setTimeZone(TimeZone.getTimeZone(result.body.series[0].timezone));
             
             Date startDate = new Date( ((long)result.body.series[0].startdate) * 1000  );
@@ -341,7 +373,6 @@ def getBPM(startDate, endDate){
     def params = [
         uri: "https://wbsapi.withings.net/measure?action=getmeas&access_token=${accessToken}&meastype=11&category=1&startdate=${startDate}&enddate=${endDate}"
     ]
-    log.debug params
     httpGet(params) { resp ->
         def result =  new JsonSlurper().parseText(resp.data.text)
         log.debug result
@@ -365,7 +396,18 @@ def getDateArray(day){
     def now = new Date()
     use (groovy.time.TimeCategory) {
         first =  (int)((now - day.days).getTime() / 1000)
-        end =  (int)((now + 1.days).getTime() / 1000)
+        end =  (int)((now + day.days).getTime() / 1000)
+    }
+    return [first, end]
+}
+
+def getDateMinArray(min){
+ 	def first
+    def end
+    def now = new Date()
+    use (groovy.time.TimeCategory) {
+        first =  (int)((now - min.minutes).getTime() / 1000)
+        end =  (int)((now).getTime() / 1000)
     }
     return [first, end]
 }
