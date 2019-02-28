@@ -1,5 +1,5 @@
 /**
- *  Withings Sleep Sensor (v.0.0.2)
+ *  Withings Sleep Sensor (v.0.0.3)
  *
  * MIT License
  *
@@ -210,18 +210,18 @@ def setID(id){
 
 def refresh(){
 	log.debug "refresh"
-	getSleepSummaryData()
-    getSleepData()
+    currentStatus()
 }
 
 def currentStatus(){
-	getSleepData()
+	getSleepSummaryData()
+    getSleepData()
 }
 
 def getSleepData(){
 	def accessToken = parent.getAccountAccessToken("user.activity")
     
-   	def dateInfo = getDateMinArray(60 * 6)
+   	def dateInfo = getDateMinArray(60 * 24)
     def first = dateInfo[0], end = dateInfo[1]
     
     def params = [
@@ -239,28 +239,31 @@ def getSleepData(){
                     lastTarget = item 
                 }
             }
-            def date = new Date( (long)lastTarget.enddate * 1000)
-            def dateStr = date.format( 'yyyy-MM-dd hh:mm:ss', location.timeZone )
+            if(lastTarget.enddate){
+                def date = new Date( (long)lastTarget.enddate * 1000)
+                def dateStr = date.format( 'yyyy-MM-dd hh:mm:ss', location.timeZone )
+
+                def state = ""
+                switch(lastTarget.state){
+                case 0:
+                    state = "awake"
+                    break
+                case 1:
+                    state = "light_sleep"
+                    break
+                case 2:
+                    state = "deep_sleep"
+                    break
+                case 3:
+                    state = "rem_sleep"
+                    break
+                }
+                log.debug "SleepData Result >> ${state} [${dateStr}]"
+                if(state != ""){
+                    sendEvent(name:"status", value: state )
+                }
+            }
             
-            def state = ""
-            switch(lastTarget.state){
-            case 0:
-            	state = "awake"
-            	break
-            case 1:
-            	state = "light_sleep"
-            	break
-            case 2:
-            	state = "deep_sleep"
-            	break
-            case 3:
-            	state = "rem_sleep"
-            	break
-            }
-            log.debug "SleepData Result >> ${state} [${dateStr}]"
-            if(state != ""){
-            	sendEvent(name:"status", value: state )
-            }
         }
     }
 }
@@ -387,7 +390,7 @@ def getBPM(startDate, endDate){
 def updated() {
 	unschedule()
     log.debug "Request data every ${pollingTime} hour " 
-    schedule("* */${pollingTime} * * * ?", getSleepSummaryData)
+    schedule("* */${pollingTime} * * * ?", currentStatus)
 }
 
 def getDateArray(day){
