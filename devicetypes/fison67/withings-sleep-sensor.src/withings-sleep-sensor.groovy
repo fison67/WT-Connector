@@ -104,6 +104,7 @@ metadata {
         attribute "status", "string"
         
         attribute "lastCheckin", "Date"
+        attribute "lastMeasureDate", "Date"
 	}
 
 
@@ -127,6 +128,13 @@ metadata {
     			attributeState("default", label:'\nLast Update: ${currentValue}')
             }
 		}
+        valueTile("last_measure_date_label", "last_measure_date_label", decoration: "flat", width: 3, height: 1) {
+            state "default", label:'Measure Date'
+        }   
+        valueTile("lastMeasureDate", "device.lastMeasureDate", width: 3, height: 1, unit: "") {
+            state("val", label:'${currentValue}', defaultState: true
+            )
+        }
         valueTile("sleep_start_time_str_label", "", decoration: "flat", width: 3, height: 1) {
             state "default", label:'Sleep Start'
         }   
@@ -291,53 +299,55 @@ def getSleepSummaryData(){
             log.debug "SleepSummaryData Result >> ${result.body.series}"
             def data = result.body.series[0].data
             
+            sendEvent(name: "lastMeasureDate", value: result.body.series[0].date, displayed: false)
+            
             def notSleepTime = msToTime(data.wakeupduration)
             def notSleepTimeTmp = notSleepTime.split(":")
-    		sendEvent(name:"not_sleep_duration_str", value: notSleepTime )
-    		sendEvent(name:"not_sleep_duration_hour", value: notSleepTimeTmp[0] as int )
-    		sendEvent(name:"not_sleep_duration_min", value: notSleepTimeTmp[1] as int )
-    		sendEvent(name:"not_sleep_duration_value", value: data.wakeupduration )
+    		sendEvent(name:"not_sleep_duration_str", value: notSleepTime, displayed:false )
+    		sendEvent(name:"not_sleep_duration_hour", value: notSleepTimeTmp[0] as int, displayed:false )
+    		sendEvent(name:"not_sleep_duration_min", value: notSleepTimeTmp[1] as int, displayed:false )
+    		sendEvent(name:"not_sleep_duration_value", value: data.wakeupduration, displayed:false )
             
             
             def lightSleepTime = msToTime(data.lightsleepduration)
             def lightSleepTimeTmp = lightSleepTime.split(":")
-    		sendEvent(name:"sleep_duration_light_str", value: lightSleepTime )
-    		sendEvent(name:"sleep_duration_light_hour", value: lightSleepTimeTmp[0] as int )
-    		sendEvent(name:"sleep_duration_light_min", value: lightSleepTimeTmp[1] as int )
-    		sendEvent(name:"sleep_duration_light_value", value: data.lightsleepduration/60 )
+    		sendEvent(name:"sleep_duration_light_str", value: lightSleepTime, displayed:false )
+    		sendEvent(name:"sleep_duration_light_hour", value: lightSleepTimeTmp[0] as int, displayed:false )
+    		sendEvent(name:"sleep_duration_light_min", value: lightSleepTimeTmp[1] as int, displayed:false )
+    		sendEvent(name:"sleep_duration_light_value", value: data.lightsleepduration/60, displayed:false )
             
             
             def deepSleepTime = msToTime(data.deepsleepduration)
             def deepSleepTimeTmp = deepSleepTime.split(":")
-    		sendEvent(name:"sleep_duration_deep_str", value: deepSleepTime )
-    		sendEvent(name:"sleep_duration_deep_hour", value: deepSleepTimeTmp[0] as int )
-    		sendEvent(name:"sleep_duration_deep_min", value: deepSleepTimeTmp[1] as int )
-    		sendEvent(name:"sleep_duration_deep_value", value: data.deepsleepduration/60 )
+    		sendEvent(name:"sleep_duration_deep_str", value: deepSleepTime, displayed:false )
+    		sendEvent(name:"sleep_duration_deep_hour", value: deepSleepTimeTmp[0] as int, displayed:false )
+    		sendEvent(name:"sleep_duration_deep_min", value: deepSleepTimeTmp[1] as int, displayed:false )
+    		sendEvent(name:"sleep_duration_deep_value", value: data.deepsleepduration/60, displayed:false )
             
             def gap = (long)result.body.series[0].enddate - (long)result.body.series[0].startdate - data.wakeupduration - data.durationtowakeup - data.durationtosleep
             def sleepTime = msToTime( gap )
             def sleepTimeTmp = sleepTime.split(":")
-    		sendEvent(name:"sleep_duration_str", value: sleepTime )
-    		sendEvent(name:"sleep_duration_hour", value: sleepTimeTmp[0] as int )
-    		sendEvent(name:"sleep_duration_min", value: sleepTimeTmp[1] as int )
-    		sendEvent(name:"sleep_duration_value", value: gap/60 )
+    		sendEvent(name:"sleep_duration_str", value: sleepTime, displayed:false )
+    		sendEvent(name:"sleep_duration_hour", value: sleepTimeTmp[0] as int, displayed:false )
+    		sendEvent(name:"sleep_duration_min", value: sleepTimeTmp[1] as int, displayed:false )
+    		sendEvent(name:"sleep_duration_value", value: gap/60, displayed:false )
             
     	//	sendEvent(name:"status", value: sleepTime )
             
             def remSleepTime = msToTime(data.remsleepduration)
             def remSleepTimeTmp = remSleepTime.split(":")
-    		sendEvent(name:"sleep_duation_rem_str", value: remSleepTime )
-    		sendEvent(name:"sleep_duation_rem_hour", value: remSleepTimeTmp[0] as int  )
-    		sendEvent(name:"sleep_duation_rem_min", value: remSleepTimeTmp[1] as int )
-    		sendEvent(name:"sleep_duation_rem_value", value: data.remsleepduration/60 )
+    		sendEvent(name:"sleep_duation_rem_str", value: remSleepTime, displayed:false )
+    		sendEvent(name:"sleep_duation_rem_hour", value: remSleepTimeTmp[0] as int, displayed:false  )
+    		sendEvent(name:"sleep_duation_rem_min", value: remSleepTimeTmp[1] as int, displayed:false )
+    		sendEvent(name:"sleep_duation_rem_value", value: data.remsleepduration/60, displayed:false )
             
             
             def toWakeupTime = msToTime(data.durationtowakeup)
             def toWakeupTimeTmp = toWakeupTime.split(":")
-    		sendEvent(name:"wakeup_duration_str", value: toWakeupTime )
-    		sendEvent(name:"wakeup_duration_hour", value: toWakeupTimeTmp[0] as int  )
-    		sendEvent(name:"wakeup_duration_min", value: toWakeupTimeTmp[1] as int )
-    		sendEvent(name:"wakeup_duration_value", value: data.durationtowakeup/60 )
+    		sendEvent(name:"wakeup_duration_str", value: toWakeupTime, displayed:false )
+    		sendEvent(name:"wakeup_duration_hour", value: toWakeupTimeTmp[0] as int, displayed:false  )
+    		sendEvent(name:"wakeup_duration_min", value: toWakeupTimeTmp[1] as int, displayed:false )
+    		sendEvent(name:"wakeup_duration_value", value: data.durationtowakeup/60, displayed:false )
             
     		sendEvent(name:"wakeupcount", value: data.wakeupcount )
             
@@ -350,15 +360,15 @@ def getSleepSummaryData(){
             
             def startTime = sdf.format(startDate)
             def endTime = sdf.format(endDate)
-    		sendEvent(name:"sleep_start_time_str", value: startTime)
-    		sendEvent(name:"sleep_end_time_str", value: endTime)
+    		sendEvent(name:"sleep_start_time_str", value: startTime, displayed:false)
+    		sendEvent(name:"sleep_end_time_str", value: endTime, displayed:false)
             
             def startTimeTmp = startTime.split(":")
             def endTimeTmp = endTime.split(":")
-    		sendEvent(name:"sleep_start_time_hour", value: startTimeTmp[0] as int)
-    		sendEvent(name:"sleep_start_time_min", value: startTimeTmp[1] as int)
-    		sendEvent(name:"sleep_end_time_hour", value: endTimeTmp[0] as int)
-    		sendEvent(name:"sleep_end_time_min", value: endTimeTmp[1] as int)
+    		sendEvent(name:"sleep_start_time_hour", value: startTimeTmp[0] as int, displayed:false)
+    		sendEvent(name:"sleep_start_time_min", value: startTimeTmp[1] as int, displayed:false)
+    		sendEvent(name:"sleep_end_time_hour", value: endTimeTmp[0] as int, displayed:false)
+    		sendEvent(name:"sleep_end_time_min", value: endTimeTmp[1] as int, displayed:false)
             
         //    getBPM(result.body.series[0].startdate, result.body.series[0].enddate)
         }else{
