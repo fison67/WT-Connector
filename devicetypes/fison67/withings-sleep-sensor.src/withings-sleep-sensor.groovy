@@ -1,5 +1,5 @@
 /**
- *  Withings Sleep Sensor (v.0.0.3)
+ *  Withings Sleep Sensor (v.0.0.4)
  *
  * MIT License
  *
@@ -216,6 +216,14 @@ def setID(id){
 	state._device_id = id
 }
 
+def setUserName(name){
+	state._name = name
+}
+
+def getUserName(){
+	return state._name
+}
+
 def refresh(){
 	log.debug "refresh"
     currentStatus()
@@ -227,17 +235,21 @@ def currentStatus(){
 }
 
 def getSleepData(){
-	def accessToken = parent.getAccountAccessToken("user.activity")
+	def accessToken = parent.getAccountAccessToken(state._name, "user.activity")
     
    	def dateInfo = getDateMinArray(60 * 24)
     def first = dateInfo[0], end = dateInfo[1]
     
     def params = [
-        uri: "https://wbsapi.withings.net/v2/sleep?action=get&access_token=${accessToken}&startdate=${first}&enddate=${end}"
+        uri: "https://wbsapi.withings.net/v2/sleep?action=get&startdate=${first}&enddate=${end}",
+        headers:[
+        	"Authorization": "Bearer ${accessToken}"
+        ]
     ]
     log.debug "SleepData URL >>  ${params.uri}"
     httpGet(params) { resp ->
         def result =  new JsonSlurper().parseText(resp.data.text)
+        log.debug result
         if(result.status == 0){
         	def list = result.body.series
         
@@ -277,8 +289,8 @@ def getSleepData(){
 }
 
 def getSleepSummaryData(){
-	def accessToken = parent.getAccountAccessToken("user.activity")
-   	
+	def accessToken = parent.getAccountAccessToken(state._name, "user.activity")
+   	log.debug accessToken
     def start
     def end
     def day = 1
@@ -290,13 +302,21 @@ def getSleepSummaryData(){
     }
     
     def params = [
-        uri: "https://wbsapi.withings.net/v2/sleep?action=getsummary&access_token=${accessToken}&startdateymd=${start}&enddateymd=${end}"
+        uri: "https://wbsapi.withings.net/v2/sleep?action=getsummary&startdateymd=${start}&enddateymd=${end}",
+        headers:[
+        	"Authorization": "Bearer ${accessToken}"
+        ]
     ]
     log.debug "SleepSummaryData URL >>  ${params.uri}"
     httpGet(params) { resp ->
         def result =  new JsonSlurper().parseText(resp.data.text)
+        log.debug result
         if(result.status == 0){
             log.debug "SleepSummaryData Result >> ${result.body.series}"
+            if(result.body.series.size() == 0){
+            	log.warn "No Sleep Summary Data"
+            	return
+            }
             def data = result.body.series[0].data
             
             sendEvent(name: "lastMeasureDate", value: result.body.series[0].date, displayed: false)
@@ -372,7 +392,7 @@ def getSleepSummaryData(){
             
         //    getBPM(result.body.series[0].startdate, result.body.series[0].enddate)
         }else{
-            parent.getAccessTokenByRefreshToken("user.activity")
+            parent.getAccessTokenByRefreshToken(state._name, "user.activity")
             runIn(60, getSleepSummaryData)
         }
         def time = new Date().format("yyyy-MM-dd HH:mm:ss", location.timeZone)
@@ -381,7 +401,7 @@ def getSleepSummaryData(){
 }
 
 def getBPM(startDate, endDate){
-	def accessToken = parent.getAccountAccessToken("user.metrics")
+	def accessToken = parent.getAccountAccessToken(state._name, "user.metrics")
     
     def params = [
         uri: "https://wbsapi.withings.net/measure?action=getmeas&access_token=${accessToken}&meastype=11&category=1&startdate=${startDate}&enddate=${endDate}"
@@ -392,7 +412,7 @@ def getBPM(startDate, endDate){
         
         if(result.status == 0){
         }else{
-            parent.getAccessTokenByRefreshToken("user.metrics")
+            parent.getAccessTokenByRefreshToken(state._name, "user.metrics")
         }
     }
 }
