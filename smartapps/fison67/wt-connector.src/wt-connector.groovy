@@ -1,5 +1,5 @@
 /**
- *  WT Connector (v.0.0.1)
+ *  WT Connector (v.0.0.2)
  *
  * MIT License
  *
@@ -44,12 +44,15 @@ definition(
 
 preferences {
    page(name: "mainPage")
+   page(name: "addPage")
+   page(name: "authUserPage")
+   page(name: "authUserMetricPage")
+   page(name: "authUserActivityPage")
    page(name: "devicePage")
 }
 
 
 def mainPage() {
-	def url = apiServerUrl("/api/smartapps/installations/") + app.id + "/request?access_token=${state.accessToken}"
 	dynamicPage(name: "mainPage", title: "Withings Connector", nextPage: null, uninstall: true, install: true) {
    		section("Default Information"){
             input "client_id", "string", title: "Client ID", required: false, description:"Client ID"
@@ -60,7 +63,10 @@ def mainPage() {
             paragraph "View this SmartApp's configuration to use it in other places."
             href url:"${apiServerUrl("/api/smartapps/installations/${app.id}/config?access_token=${state.accessToken}")}", style:"embedded", required:false, title:"Config", description:"Copy wt_url"
        	}
-        
+        section("Add"){
+        	href "addPage", title: "Add Page", description:""
+        }
+        /*
         section("User Information Auth"){
         	href url:"https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.info&state=1234&redirect_uri=${url}", style:"embedded", required:false, title:"Request", description:""
         }
@@ -73,18 +79,79 @@ def mainPage() {
         section() {
           	href "devicePage", title: "Device Page", description:""
        	}
+        */
+	}
+}
+
+def addPage(){
+    
+	state.info_access_token = ""
+    state.info_refresh_token = ""
+    state.metrics_access_token = ""
+    state.metrics_refresh_token = ""
+    state.actiity_access_token = ""
+    state.actiity_refresh_token = ""
+	dynamicPage(name: "addPage", title: "Add", nextPage: "authUserPage") {
+   		section("Default Information"){
+            input "user_name", "string", title: "User name", required: true, description:"Only English"
+        }
+	}
+}
+
+def getBaseURL(){
+	return apiServerUrl("/api/smartapps/installations/") + app.id + "/request?access_token=${state.accessToken}"
+}
+
+def authUserPage(){
+    def url = getBaseURL()
+	state.authMode = "user"
+	dynamicPage(name: "authUserPage", title: "Auth - User", nextPage: "authUserMetricPage") {
+        section() {
+            href url:"https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.info&state=1234&redirect_uri=${url}", style:"embedded", required:false, title:"Click Here", description:""
+            paragraph "Access Token: ${state.info_access_token}"
+            paragraph "Refresh Token: ${state.info_refresh_token}"
+       	}
+	}
+}
+
+def authUserMetricPage(){
+    def url = getBaseURL()
+	state.authMode = "userMetric"
+	dynamicPage(name: "authUserMetricPage", title: "Auth - User Metric", nextPage: "authUserActivityPage") {
+        section() {
+            href url:"https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.metrics&state=1234&redirect_uri=${url}", style:"embedded", required:false, title:"Click Here", description:""
+            paragraph "Access Token: ${state.metrics_access_token}"
+            paragraph "Refresh Token: ${state.metrics_refresh_token}"
+       	}
+	}
+}
+
+def authUserActivityPage(){
+    def url = getBaseURL()
+	state.authMode = "userActivity"
+	dynamicPage(name: "authUserActivityPage", title: "Auth - User Activity", nextPage: "devicePage") {
+        section() {
+            href url:"https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.activity&state=1234&redirect_uri=${url}", style:"embedded", required:false, title:"Click Here", description:""
+            paragraph "Access Token: ${state.actiity_access_token}"
+            paragraph "Refresh Token: ${state.actiity_refresh_token}"
+       	}
 	}
 }
 
 def devicePage(){
-	getDeviceData()
-	dynamicPage(name: "devicePage", title:"Select a Language") {
+	state[_getUserName()] = state.info_access_token + "," + state.info_refresh_token + "," + state.metrics_access_token + "," + state.metrics_refresh_token + "," + state.actiity_access_token + "," + state.actiity_refresh_token
+
+//	getDeviceData()
+	dynamicPage(name: "devicePage", title:"Done", nextPage: "mainPage") {
     	section ("Select") {
         	paragraph "Done"
         }
     }
 }
 
+def _getUserName(){
+	return "_" + settings.user_name.toLowerCase()
+}
 
 def installed() {
     log.debug "Installed with settings: ${settings}"
@@ -117,15 +184,28 @@ def existChild(dni){
 
 def initialize() {
 	log.debug "initialize"
+	unschedule()
     schedule("0 */12 * * * ?", takeTokenAuto)
 }
 
 def takeTokenAuto(){
 	log.debug "Try to a new Access Token by Refresh Token per 12 hours."
-	unschedule()
-	getAccessTokenByRefreshToken("user.info")
-	getAccessTokenByRefreshToken("user.metrics")
-	getAccessTokenByRefreshToken("user.activity")
+    
+    def names = []
+    def list = getChildDevices()
+    list.each { child ->
+    	def dni = child.getDeviceNetworkId()
+        if(dni.startsWith("wt-connector-person-")){
+        	names.add(dni.split("-")[3])
+        }
+    }
+    log.debug names
+    names.each { name ->
+    	getAccessTokenByRefreshToken(name, "user.info")
+        getAccessTokenByRefreshToken(name, "user.metrics")
+        getAccessTokenByRefreshToken(name, "user.activity")
+    }
+	
 }
 
 def authError() {
@@ -134,18 +214,11 @@ def authError() {
 }
 
 def request(){
-    log.debug params
-    if(params.access_token){
-    	state._access_token = params.access_token
-		log.debug "Access Token >> ${state._access_token}"
-    }
     if(params.code){
     	state._code = params.code
-		log.debug "Access Code >> ${state._code}"
         getAccessToken()
     }
-    def configString = new groovy.json.JsonOutput().toJson("list":true)
-    render contentType: "text/plain", data: configString
+    render contentType: "text/plain", data: "Click Done"
 }
 
 def getAccessToken(){
@@ -172,11 +245,11 @@ def registerNotifyListener(appli){
     }
 }
 
-def getAccessTokenByRefreshToken(type){
-	def token = getTokenByType(type)
+def getAccessTokenByRefreshToken(name, type){
+	def token = getTokenByType(name, type)
 	try {
-        httpPost("https://account.withings.com/oauth2/token", "grant_type=refresh_token&client_id=${client_id}&client_secret=${client_pwd}&refresh_token=${token}") { resp ->
-            processToken(resp)
+        httpPost("https://account.withings.com/oauth2/token", "grant_type=refresh_token&client_id=${settings.client_id}&client_secret=${settings.client_pwd}&refresh_token=${token}") { resp ->
+            processRefreshToken(name, resp)
         }
     } catch (e) {
         log.debug "something went wrong: $e"
@@ -200,33 +273,48 @@ def processToken(resp){
     }
 }
 
-def getAccountAccessToken(type){
+def processRefreshToken(name, resp){
+	def tokens = state[name].split(",")
+	if(resp.data.scope == "user.info"){
+        state[name] = resp.data.access_token + "," + resp.data.refresh_token + "," + tokens[2] + "," + tokens[3] + "," + tokens[4] + "," + tokens[5]
+    }else if(resp.data.scope == "user.metrics"){
+        state[name] = tokens[0] + "," + tokens[1] + "," + resp.data.access_token + "," + resp.data.refresh_token + "," + tokens[4] + "," + tokens[5]
+    }else if(resp.data.scope == "user.activity"){
+        state[name] = tokens[0] + "," + tokens[1] + "," + tokens[2] + "," + tokens[3] + "," + resp.data.access_token + "," + resp.data.refresh_token
+    }
+    log.debug "Updated Token ${name} >> ${state[name]}"
+}
+
+def getAccountAccessToken(name, type){
+	log.debug name + ": " + state[name] 
+	def info = state[name].split(",")
 	def result = ""
 	switch(type){
     case "user.info":
-    	result = state.actiity_access_token
+    	result = info[0]
     	break
     case "user.metrics":
-    	result = state.metrics_access_token
+    	result = info[2]
     	break
     case "user.activity":
-    	result = state.actiity_access_token
+    	result = info[4]
     	break
     }
 	return result
 }
 
-def getTokenByType(type){
+def getTokenByType(name, type){
+	def info = state[name].split(",")
 	def token = ""
 	switch(type){
     case "user.info":
-    	token = state.info_refresh_token
+    	token = info[1]
     	break
     case "user.metrics":
-    	token = state.metrics_refresh_token
+    	token = info[3]
     	break
     case "user.activity":
-        token = state.actiity_refresh_token
+        token = info[5]
         break
     }
     return token
@@ -243,45 +331,48 @@ def getDeviceData(){
             	def list = result.body.devices
                 log.debug list
                 
-                if(!existChild("wt-connector-person")){
+                def userName = settings.user_name.toLowerCase()
+                if(!existChild("wt-connector-person-" + userName)){
                 	try{
-                        def childDevice = addChildDevice("fison67", "Withings Person", "wt-connector-person", location.hubs[0].id, [
-                            "label": "Withings Person"
+                        def childDevice = addChildDevice("fison67", "Withings Person", "wt-connector-person-${userName}", location.hubs[0].id, [
+                            "label": "Withings Person ${userName}"
                         ])    
-                        childDevice.setID("wt-connector-person")
+                        childDevice.setUserName(_getUserName())
                     }catch(err){
                         log.error err
                     }
                 }
                 
                 list.each { device ->
-                    def dni = "wt-connector-${device.deviceid}"
+                    def dni = "wt-connector-${userName}-${device.deviceid}"
                     def exist = existChild(dni)
                     def dth = ""
                     if(device.type == "Sleep Monitor"){
-                       dth = "Withings Sleep Sensor"; 
+                       dth = "Withings Sleep Sensor"
                     }else if(device.type == "Scale"){
-                       dth = "Withings Scale"; 
+                       dth = "Withings Scale"
                     }
                     
                     if(!exist && dth != ""){
                         try{
                             def childDevice = addChildDevice("fison67", dth, dni, location.hubs[0].id, [
-                                "label": dth
+                                "label": dth + " " + userName
                             ])    
                             childDevice.setID(device.deviceid)
-                            childDevice.updated()
+                        	childDevice.setUserName(_getUserName())
+                     //       childDevice.updated()
                         }catch(err){
                             log.error err
                         }
                     }else{
-                    	def chlid = getChildDevice(dni)
+                    	log.debug "Exist Device or Not Support DTH >> " + device.type + "(" + device.deviceid + ")"
+                    //	def chlid = getChildDevice(dni)
                     }
                     
                 }
                 
             }else{
-        		getAccessTokenByRefreshToken("user.info")
+        		//getAccessTokenByRefreshToken("user.info")
             }
         }
     } catch (e) {
@@ -308,15 +399,25 @@ def renderConfig() {
     render contentType: "text/plain", data: configString
 }
 
+def nofiyData(){
+	log.debug params
+    log.debug state.chals
+    render contentType: "text/plain", data:  "Done"
+}
+
 mappings {
     if (!params.access_token || (params.access_token && params.access_token != state.accessToken)) {
         path("/config")                         { action: [GET: "authError"] }
         path("/request")                         { action: [GET: "authError"]  }
         path("/request")                         { action: [POST: "authError"]  }
+        path("/notify")                         { action: [GET: "authError"]  }
+        path("/notify")                         { action: [POST: "authError"]  }
 
     } else {
         path("/config")                         { action: [GET: "renderConfig"]  }
         path("/request")                         { action: [GET: "request"]  }
         path("/request")                         { action: [POST: "request"]  }
+        path("/notify")                         { action: [GET: "nofiyData"]  }
+        path("/notify")                         { action: [POST: "nofiyData"]  }
     }
 }
