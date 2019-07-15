@@ -1,5 +1,5 @@
 /**
- *  Withings Scale (v.0.0.1)
+ *  Withings Scale (v.0.0.2)
  *
  * MIT License
  *
@@ -162,13 +162,21 @@ def setID(id){
 	state._device_id = id
 }
 
+def setUserName(name){
+	state._name = name
+}
+
+def getUserName(){
+	return state._name
+}
+
 def refresh(){
 	log.debug "Refresh"
     _getData()
 }
 
 def _getData(){
-	def accessToken = parent.getAccountAccessToken("user.metrics")    
+	def accessToken = parent.getAccountAccessToken(state._name, "user.metrics")    
    	def dateInfo = getDateArray(5)
     def first = dateInfo[0], end = dateInfo[1]
     def params = [
@@ -248,7 +256,7 @@ def _getData(){
             }
         }else{
         	log.debug result
-            parent.getAccessTokenByRefreshToken("user.metrics")
+            parent.getAccessTokenByRefreshToken(state._name, "user.metrics")
         }
         def time = new Date().format("yyyy-MM-dd HH:mm:ss", location.timeZone)
         sendEvent(name: "lastCheckin", value: time, displayed: false)
