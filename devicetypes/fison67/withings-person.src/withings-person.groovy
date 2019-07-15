@@ -1,5 +1,5 @@
 /**
- *  Withings Person (v.0.0.1)
+ *  Withings Person (v.0.0.2)
  *
  * MIT License
  *
@@ -141,6 +141,14 @@ def setID(id){
 	state._device_id = id
 }
 
+def setUserName(name){
+	state._name = name
+}
+
+def getUserName(){
+	return state._name
+}
+
 def refresh(){
 	log.debug "Refresh"
     getUserHealth()
@@ -148,7 +156,7 @@ def refresh(){
 
 def getUserHealth(){
 	log.debug "Get User Health"
-	def accessToken = parent.getAccountAccessToken("user.activity")
+	def accessToken = parent.getAccountAccessToken(state._name, "user.activity")
     def now = new Date()
     def start = now.format( 'yyyy-MM-dd', location.timeZone )
     def end = start
@@ -173,7 +181,7 @@ def getUserHealth(){
     		try{ sendEvent(name:"totalcalories", value: data.totalcalories as int) }catch(err){}
         }else{
         	log.debug result
-            parent.getAccessTokenByRefreshToken("user.activity")
+            parent.getAccessTokenByRefreshToken(state._name, "user.activity")
         }
         def time = new Date().format("yyyy-MM-dd HH:mm:ss", location.timeZone)
         sendEvent(name: "lastCheckin", value: time)
