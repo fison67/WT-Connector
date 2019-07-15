@@ -27,9 +27,9 @@ Connector for Withings devices with [SmartThings](https://www.smartthings.com/ge
 * Make a Withings developer app (https://account.withings.com/partner/add_oauth2)
 * Set a wt_url to callback url on Withings developer app
 * Set a client id & password to WT Smartapp
-* Click a User Informaton Auth & Login
-* Click a User Metrics Auth & Login
-* Click a User Activity Auth & Login
+* Click a Add Page
+* Type a name
+* Login & Select
 * Then device is automatically generated
 * With screenshots: https://github.com/fison67/WT-Connector/blob/master/doc/README.md
 
