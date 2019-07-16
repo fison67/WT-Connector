@@ -180,7 +180,10 @@ def _getData(){
    	def dateInfo = getDateArray(5)
     def first = dateInfo[0], end = dateInfo[1]
     def params = [
-    	uri: "https://wbsapi.withings.net/measure?action=getmeas&access_token=${accessToken}&category=1&startdate=${first}&enddate=${end}"
+    	uri: "https://wbsapi.withings.net/measure?action=getmeas&category=1&startdate=${first}&enddate=${end}",
+        headers:[
+        	"Authorization": "Bearer ${accessToken}"
+        ]
     ]
     httpGet(params) { resp ->
         def result =  new JsonSlurper().parseText(resp.data.text)
