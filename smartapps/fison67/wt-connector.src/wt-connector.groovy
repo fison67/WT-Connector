@@ -1,5 +1,5 @@
 /**
- *  WT Connector (v.0.0.2)
+ *  WT Connector (v.0.0.3)
  *
  * MIT License
  *
@@ -55,8 +55,8 @@ preferences {
 def mainPage() {
 	dynamicPage(name: "mainPage", title: "Withings Connector", nextPage: null, uninstall: true, install: true) {
    		section("Default Information"){
-            input "client_id", "string", title: "Client ID", required: false, description:"Client ID"
-            input "client_pwd", "string", title: "Client Password", required: false, description:"Client Password"
+            input "client_id", "text", title: "Client ID", required: false, description:"Client ID"
+            input "client_pwd", "text", title: "Client Password", required: false, description:"Client Password"
         }
         
        	section() {
@@ -93,7 +93,7 @@ def addPage(){
     state.actiity_refresh_token = ""
 	dynamicPage(name: "addPage", title: "Add", nextPage: "authUserPage") {
    		section("Default Information"){
-            input "user_name", "string", title: "User name", required: true, description:"Only English"
+            input "user_name", "text", title: "User name", required: true, description:"Only English"
         }
 	}
 }
