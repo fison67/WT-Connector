@@ -1,5 +1,5 @@
 /**
- *  Withings Sleep Sensor (v.0.0.4)
+ *  Withings Sleep Sensor (v.0.0.5)
  *
  * MIT License
  *
@@ -103,8 +103,6 @@ metadata {
         
         attribute "status", "string"
         
-        attribute "lastCheckin", "Date"
-        attribute "lastMeasureDate", "Date"
 	}
 
 
@@ -115,95 +113,6 @@ metadata {
         input name: "pollingTime", title:"Polling Time[Hour]" , type: "number", required: true, defaultValue: 1, description:"Polling Hour", range: "1..12"
 	}
 
-	tiles {
-		multiAttributeTile(name:"status", type: "generic", width: 6, height: 4){
-			tileAttribute ("device.status", key: "PRIMARY_CONTROL") {
-            	attributeState("awake", label:'Awake', backgroundColor: "#57f90c")
-            	attributeState("light_sleep", label:'Light Sleep', backgroundColor: "#41b5f4")
-            	attributeState("deep_sleep", label:'Deep Sleep', backgroundColor: "#f90caa")
-            	attributeState("rem_sleep", label:'Rem Sleep', backgroundColor: "#7a42f4")
-            }
-            
-            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
-    			attributeState("default", label:'\nLast Update: ${currentValue}')
-            }
-		}
-        valueTile("last_measure_date_label", "last_measure_date_label", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Measure Date'
-        }   
-        valueTile("lastMeasureDate", "device.lastMeasureDate", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
-            )
-        }
-        valueTile("sleep_start_time_str_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Sleep Start'
-        }   
-        valueTile("sleep_start_time_str", "device.sleep_start_time_str", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
-            )
-        }
-        valueTile("sleep_end_time_str_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Sleep End'
-        }   
-        valueTile("sleep_end_time_str", "device.sleep_end_time_str", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
-            )
-        }
-        
-        valueTile("sleep_duration_str_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Sleep Time'
-        }  
-        valueTile("sleep_duration_str", "device.sleep_duration_str", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
-            )
-        }
-        valueTile("sleep_duration_deep_str_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Deep Sleep Time'
-        }    
-        valueTile("sleep_duration_deep_str", "device.sleep_duration_deep_str", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
-            )
-        }
-        valueTile("sleep_duration_light_str_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Light Sleep Time'
-        }    
-        valueTile("sleep_duration_light_str", "device.sleep_duration_light_str", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
-            )
-        }
-        valueTile("sleep_duation_rem_str_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Rem Sleep Duration'
-        }  
-        valueTile("sleep_duation_rem_str", "device.sleep_duation_rem_str", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
-            )
-        }
-        valueTile("not_sleep_duration_str_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Not Sleep'
-        }   
-        valueTile("not_sleep_duration_str", "device.not_sleep_duration_str", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
-            )
-        }
-        valueTile("wakeupcount_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Wakeup Count'
-        }  
-        valueTile("wakeupcount", "device.wakeupcount", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
-            )
-        }
-        valueTile("durationtowakeup_label", "", decoration: "flat", width: 3, height: 1) {
-            state "default", label:'Duration to Wakeup'
-        }  
-        valueTile("wakeup_duration_str", "device.wakeup_duration_str", width: 3, height: 1, unit: "") {
-            state("val", label:'${currentValue}', defaultState: true
-            )
-        }
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", label:"", action:"refresh", icon:"st.secondary.refresh"
-        }
-        
-	}
 
 }
 
@@ -235,20 +144,18 @@ def currentStatus(){
 }
 
 def getSleepData(){
-	def accessToken = parent.getAccountAccessToken(state._name, "user.activity")
-    
    	def dateInfo = getDateMinArray(60 * 24)
     def first = dateInfo[0], end = dateInfo[1]
     
     def params = [
         uri: "https://wbsapi.withings.net/v2/sleep?action=get&startdate=${first}&enddate=${end}",
         headers:[
-        	"Authorization": "Bearer ${accessToken}"
+        	"Authorization": "Bearer ${parent.getAccountAccessToken(userName)}"
         ]
     ]
-    log.debug "SleepData URL >>  ${params.uri}"
+    
     httpGet(params) { resp ->
-        def result =  new JsonSlurper().parseText(resp.data.text)
+        def result =  resp.data
         log.debug result
         if(result.status == 0){
         	def list = result.body.series
@@ -289,8 +196,6 @@ def getSleepData(){
 }
 
 def getSleepSummaryData(){
-	def accessToken = parent.getAccountAccessToken(state._name, "user.activity")
-   	log.debug accessToken
     def start
     def end
     def day = 1
@@ -304,12 +209,12 @@ def getSleepSummaryData(){
     def params = [
         uri: "https://wbsapi.withings.net/v2/sleep?action=getsummary&startdateymd=${start}&enddateymd=${end}",
         headers:[
-        	"Authorization": "Bearer ${accessToken}"
+        	"Authorization": "Bearer ${parent.getAccountAccessToken(userName)}"
         ]
     ]
     log.debug "SleepSummaryData URL >>  ${params.uri}"
     httpGet(params) { resp ->
-        def result =  new JsonSlurper().parseText(resp.data.text)
+        def result =  resp.data
         log.debug result
         if(result.status == 0){
             log.debug "SleepSummaryData Result >> ${result.body.series}"
@@ -392,27 +297,24 @@ def getSleepSummaryData(){
             
         //    getBPM(result.body.series[0].startdate, result.body.series[0].enddate)
         }else{
-            parent.getAccessTokenByRefreshToken(state._name, "user.activity")
+            parent.refreshToken(userName)
             runIn(60, getSleepSummaryData)
         }
-        def time = new Date().format("yyyy-MM-dd HH:mm:ss", location.timeZone)
-        sendEvent(name: "lastCheckin", value: time, displayed: false)
+        
     }
 }
 
 def getBPM(startDate, endDate){
-	def accessToken = parent.getAccountAccessToken(state._name, "user.metrics")
-    
     def params = [
-        uri: "https://wbsapi.withings.net/measure?action=getmeas&access_token=${accessToken}&meastype=11&category=1&startdate=${startDate}&enddate=${endDate}"
+        uri: "https://wbsapi.withings.net/measure?action=getmeas&access_token=${parent.getAccountAccessToken(userName)}&meastype=11&category=1&startdate=${startDate}&enddate=${endDate}"
     ]
     httpGet(params) { resp ->
-        def result =  new JsonSlurper().parseText(resp.data.text)
+        def result =  resp.data
         log.debug result
         
         if(result.status == 0){
         }else{
-            parent.getAccessTokenByRefreshToken(state._name, "user.metrics")
+            parent.refreshToken(userName)
         }
     }
 }
