@@ -46,8 +46,6 @@ preferences {
    page(name: "mainPage")
    page(name: "addPage")
    page(name: "authUserPage")
-   page(name: "authUserMetricPage")
-   page(name: "authUserActivityPage")
    page(name: "devicePage")
 }
 
@@ -66,20 +64,6 @@ def mainPage() {
         section("Add"){
         	href "addPage", title: "Add Page", description:""
         }
-        /*
-        section("User Information Auth"){
-        	href url:"https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.info&state=1234&redirect_uri=${url}", style:"embedded", required:false, title:"Request", description:""
-        }
-        section("User Metrics Data Auth"){
-        	href url:"https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.metrics&state=1234&redirect_uri=${url}", style:"embedded", required:false, title:"Request", description:""
-        }
-        section("User Activity Auth"){
-        	href url:"https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.activity&state=1234&redirect_uri=${url}", style:"embedded", required:false, title:"Request", description:""
-        }
-        section() {
-          	href "devicePage", title: "Device Page", description:""
-       	}
-        */
 	}
 }
 
@@ -87,10 +71,6 @@ def addPage(){
     
 	state.info_access_token = ""
     state.info_refresh_token = ""
-    state.metrics_access_token = ""
-    state.metrics_refresh_token = ""
-    state.actiity_access_token = ""
-    state.actiity_refresh_token = ""
 	dynamicPage(name: "addPage", title: "Add", nextPage: "authUserPage") {
    		section("Default Information"){
             input "user_name", "text", title: "User name", required: true, description:"Only English"
@@ -104,44 +84,18 @@ def getBaseURL(){
 
 def authUserPage(){
     def url = getBaseURL()
+    state[settings.user_name] = ""
 	state.authMode = "user"
-	dynamicPage(name: "authUserPage", title: "Auth - User", nextPage: "authUserMetricPage") {
+	dynamicPage(name: "authUserPage", title: "Auth - User", nextPage: "devicePage") {
         section() {
-            href url:"https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.info&state=1234&redirect_uri=${url}", style:"embedded", required:false, title:"Click Here", description:""
+            href url: "https://fison67.duckdns.org/wt?data=" + "https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.info,user.metrics,user.activity,user.sleepevents&state=1234&redirect_uri=${url}".bytes.encodeAsBase64().toString(), style:"embedded", required:false, title:"Click Here", description:""
             paragraph "Access Token: ${state.info_access_token}"
             paragraph "Refresh Token: ${state.info_refresh_token}"
        	}
 	}
 }
 
-def authUserMetricPage(){
-    def url = getBaseURL()
-	state.authMode = "userMetric"
-	dynamicPage(name: "authUserMetricPage", title: "Auth - User Metric", nextPage: "authUserActivityPage") {
-        section() {
-            href url:"https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.metrics&state=1234&redirect_uri=${url}", style:"embedded", required:false, title:"Click Here", description:""
-            paragraph "Access Token: ${state.metrics_access_token}"
-            paragraph "Refresh Token: ${state.metrics_refresh_token}"
-       	}
-	}
-}
-
-def authUserActivityPage(){
-    def url = getBaseURL()
-	state.authMode = "userActivity"
-	dynamicPage(name: "authUserActivityPage", title: "Auth - User Activity", nextPage: "devicePage") {
-        section() {
-            href url:"https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${client_id}&scope=user.activity&state=1234&redirect_uri=${url}", style:"embedded", required:false, title:"Click Here", description:""
-            paragraph "Access Token: ${state.actiity_access_token}"
-            paragraph "Refresh Token: ${state.actiity_refresh_token}"
-       	}
-	}
-}
-
 def devicePage(){
-	state[_getUserName()] = state.info_access_token + "," + state.info_refresh_token + "," + state.metrics_access_token + "," + state.metrics_refresh_token + "," + state.actiity_access_token + "," + state.actiity_refresh_token
-
-//	getDeviceData()
 	dynamicPage(name: "devicePage", title:"Done", nextPage: "mainPage") {
     	section ("Select") {
         	paragraph "Done"
@@ -149,8 +103,8 @@ def devicePage(){
     }
 }
 
-def _getUserName(){
-	return "_" + settings.user_name.toLowerCase()
+def getUserName(){
+	return settings.user_name.toLowerCase()
 }
 
 def installed() {
@@ -167,7 +121,6 @@ def installed() {
 
 def updated() {
     log.debug "Updated with settings: ${settings}"
-	
     initialize()
 }
 
@@ -199,17 +152,14 @@ def takeTokenAuto(){
         	names.add(dni.split("-")[3])
         }
     }
-    log.debug names
+    
     names.each { name ->
-    	getAccessTokenByRefreshToken(name, "user.info")
-        getAccessTokenByRefreshToken(name, "user.metrics")
-        getAccessTokenByRefreshToken(name, "user.activity")
+    	refreshToken(name)
     }
 	
 }
 
 def authError() {
-	log.debug state.accessToken
     [error: "Permission denied"]
 }
 
@@ -224,11 +174,11 @@ def request(){
 def getAccessToken(){
 	def url = apiServerUrl("/api/smartapps/installations/") + app.id + "/request?access_token=${state.accessToken}"
 	try {
-        httpPost("https://account.withings.com/oauth2/token", "grant_type=authorization_code&client_id=${client_id}&client_secret=${client_pwd}&code=${state._code}&redirect_uri=${url}") { resp ->
+        httpPost("https://account.withings.com/oauth2/token", "action=requesttoken&grant_type=authorization_code&client_id=${client_id}&client_secret=${client_pwd}&code=${state._code}&redirect_uri=${url}") { resp ->
             processToken(resp)
         }
     } catch (e) {
-        log.debug "getAccessToken >> something went wrong: $e"
+        log.warn "getAccessToken >> something went wrong: $e"
     }
 }
 
@@ -240,84 +190,54 @@ def registerNotifyListener(appli){
         uri: "https://wbsapi.withings.net/notify?action=subscribe&access_token=${accesstoken}&callbackurl=${callbackURL}&appli=${appli}"
     ]
     httpGet(params) { resp ->
-        def result =  new JsonSlurper().parseText(resp.data.text)
+        def result =  resp.data
         log.debug result
     }
 }
 
-def getAccessTokenByRefreshToken(name, type){
-	def token = getTokenByType(name, type)
+def refreshToken(name){
 	try {
-        httpPost("https://account.withings.com/oauth2/token", "grant_type=refresh_token&client_id=${settings.client_id}&client_secret=${settings.client_pwd}&refresh_token=${token}") { resp ->
-            processRefreshToken(name, resp)
+    	def param = [
+        	uri: "https://account.withings.com/oauth2/token",
+            body:[
+            	"grant_type": "refresh_token",
+                "client_id": "${settings.client_id}",
+                "client_secret": "${settings.client_pwd}",
+                "refresh_token": "${getAccountRefreshToken(name)}",
+            ]
+        ]
+        httpPost(param) { resp ->
+        	processRefreshToken(name, resp)
         }
     } catch (e) {
-        log.debug "something went wrong: $e"
+        log.warn "something went wrong: $e"
     }
 }
 
 def processToken(resp){
-	if(resp.data.scope == "user.info"){
+	log.info resp.data
+	if(resp.data.scope == "user.info,user.metrics,user.activity,user.sleepevents"){
         state.info_access_token = resp.data.access_token
         state.info_refresh_token = resp.data.refresh_token
-        log.debug "User Info >> access_token(${state.info_access_token}), refresh_token(${state.info_refresh_token})"
+        state["${userName}_at"] = resp.data.access_token
+        state["${userName}_rt"] = resp.data.refresh_token
+        log.warn "${userName}_at"
+        log.warn "${userName}_rt"
         getDeviceData()
-    }else if(resp.data.scope == "user.metrics"){
-        state.metrics_access_token = resp.data.access_token
-        state.metrics_refresh_token = resp.data.refresh_token
-        log.debug "User Metric >> access_token(${state.metrics_access_token}), refresh_token(${state.metrics_refresh_token})"
-    }else if(resp.data.scope == "user.activity"){
-        state.actiity_access_token = resp.data.access_token
-        state.actiity_refresh_token = resp.data.refresh_token
-        log.debug "User Activity >> access_token(${state.actiity_access_token}), refresh_token(${state.actiity_refresh_token})"
     }
 }
 
-def processRefreshToken(name, resp){
-	def tokens = state[name].split(",")
-	if(resp.data.scope == "user.info"){
-        state[name] = resp.data.access_token + "," + resp.data.refresh_token + "," + tokens[2] + "," + tokens[3] + "," + tokens[4] + "," + tokens[5]
-    }else if(resp.data.scope == "user.metrics"){
-        state[name] = tokens[0] + "," + tokens[1] + "," + resp.data.access_token + "," + resp.data.refresh_token + "," + tokens[4] + "," + tokens[5]
-    }else if(resp.data.scope == "user.activity"){
-        state[name] = tokens[0] + "," + tokens[1] + "," + tokens[2] + "," + tokens[3] + "," + resp.data.access_token + "," + resp.data.refresh_token
-    }
-    log.debug "Updated Token ${name} >> ${state[name]}"
+def processRefreshToken(userName, resp){
+    state["${userName}_at"] = resp.data.access_token
+    state["${userName}_rt"] = resp.data.refresh_token
 }
 
-def getAccountAccessToken(name, type){
-	log.debug name + ": " + state[name] 
-	def info = state[name].split(",")
-	def result = ""
-	switch(type){
-    case "user.info":
-    	result = info[0]
-    	break
-    case "user.metrics":
-    	result = info[2]
-    	break
-    case "user.activity":
-    	result = info[4]
-    	break
-    }
-	return result
+def getAccountAccessToken(userName){
+	return state["${userName}_at"]
 }
 
-def getTokenByType(name, type){
-	def info = state[name].split(",")
-	def token = ""
-	switch(type){
-    case "user.info":
-    	token = info[1]
-    	break
-    case "user.metrics":
-    	token = info[3]
-    	break
-    case "user.activity":
-        token = info[5]
-        break
-    }
-    return token
+def getAccountRefreshToken(userName){
+	return state["${userName}_rt"]
 }
 
 def getDeviceData(){
@@ -325,19 +245,19 @@ def getDeviceData(){
         def params = [
             uri: "https://wbsapi.withings.net/v2/user?action=getdevice&access_token=${state.info_access_token}"
         ]
+        
         httpGet(params) { resp ->
-            def result =  new JsonSlurper().parseText(resp.data.text)
+            def result =  resp.data
             if(result.status == 0){
             	def list = result.body.devices
-                log.debug list
                 
                 def userName = settings.user_name.toLowerCase()
                 if(!existChild("wt-connector-person-" + userName)){
                 	try{
-                        def childDevice = addChildDevice("fison67", "Withings Person", "wt-connector-person-${userName}", location.hubs[0].id, [
+                        def childDevice = addChildDevice("streamorange58819", "Withings Person", "wt-connector-person-${userName}", null, [
                             "label": "Withings Person ${userName}"
                         ])    
-                        childDevice.setUserName(_getUserName())
+                        childDevice.setUserName(userName)
                     }catch(err){
                         log.error err
                     }
@@ -359,13 +279,13 @@ def getDeviceData(){
                                 "label": dth + " " + userName
                             ])    
                             childDevice.setID(device.deviceid)
-                        	childDevice.setUserName(_getUserName())
+                        	childDevice.setUserName(userName)
                      //       childDevice.updated()
                         }catch(err){
                             log.error err
                         }
                     }else{
-                    	log.debug "Exist Device or Not Support DTH >> " + device.type + "(" + device.deviceid + ")"
+                    	log.warn "Exist Device or Not Support DTH >> " + device.type + "(" + device.deviceid + ")"
                     //	def chlid = getChildDevice(dni)
                     }
                     
@@ -376,7 +296,7 @@ def getDeviceData(){
             }
         }
     } catch (e) {
-        log.debug "getDeviceData >> something went wrong: $e"
+        log.warn "getDeviceData >> something went wrong: $e"
     }
 }
 
@@ -400,8 +320,6 @@ def renderConfig() {
 }
 
 def nofiyData(){
-	log.debug params
-    log.debug state.chals
     render contentType: "text/plain", data:  "Done"
 }
 
