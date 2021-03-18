@@ -1,5 +1,5 @@
 /**
- *  Withings Sleep Sensor (v.0.0.5)
+ *  Withings Sleep Sensor (v.0.0.6)
  *
  * MIT License
  *
@@ -32,8 +32,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar.*
 
 metadata {
-	definition (name: "Withings Sleep Sensor", namespace: "fison67", author: "fison67") {
-      	capability "Sensor"
+	definition (name: "Withings Sleep Sensor", namespace: "fison67", author: "fison67", mnmn:"fison67", vid: "d063ab07-d207-3f18-af31-80da936beb6c") {
+    	capability "Sleep Sensor"
         capability "Refresh"		
         
         /**
@@ -105,15 +105,11 @@ metadata {
         
 	}
 
-
-	simulator {
-	}
+	simulator {}
     
     preferences {
         input name: "pollingTime", title:"Polling Time[Hour]" , type: "number", required: true, defaultValue: 1, description:"Polling Hour", range: "1..12"
 	}
-
-
 }
 
 // parse events into attributes
