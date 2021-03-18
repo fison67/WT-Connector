@@ -1,5 +1,5 @@
 /**
- *  WT Connector (v.0.0.3)
+ *  WT Connector (v.0.0.4)
  *
  * MIT License
  *
@@ -47,6 +47,9 @@ preferences {
    page(name: "addPage")
    page(name: "authUserPage")
    page(name: "devicePage")
+   page(name: "notificationPage")
+   page(name: "notificationCheckPage")
+   page(name: "notificationRegisterPage")
 }
 
 
@@ -64,16 +67,27 @@ def mainPage() {
         section("Add"){
         	href "addPage", title: "Add Page", description:""
         }
+        section("Notification"){
+        	href "notificationPage", title: "Notification Page", description:""
+        }
 	}
 }
 
 def addPage(){
-    
 	state.info_access_token = ""
     state.info_refresh_token = ""
 	dynamicPage(name: "addPage", title: "Add", nextPage: "authUserPage") {
    		section("Default Information"){
             input "user_name", "text", title: "User name", required: true, description:"Only English"
+        }
+	}
+}
+
+def notificationPage(){
+	dynamicPage(name: "notificationPage", title: "Add", nextPage: "mainPage") {
+   		section("Notification"){
+//        	href "notificationCheckPage", title: "Check Page", description:""
+        	href "notificationRegisterPage", title: "Manual Register Notification", description:""
         }
 	}
 }
@@ -103,6 +117,25 @@ def devicePage(){
     }
 }
 
+def notificationCheckPage(){
+	dynamicPage(name: "notificationCheckPage", title:"Check", nextPage: "mainPage") {
+    	section ("Select") {
+        	paragraph "Done"
+        }
+    }
+}
+
+def notificationRegisterPage(){
+	state.tryRegisterNotification = true
+	registerNotification()
+    
+	dynamicPage(name: "notificationRegisterPage", title:"Register", nextPage: "mainPage") {
+    	section ("Select") {
+        	paragraph "${state.registerResult}"
+        }
+    }
+}
+
 def getUserName(){
 	return settings.user_name.toLowerCase()
 }
@@ -114,14 +147,20 @@ def installed() {
         createAccessToken()
     }
     
+    state.allowedNotificationApp = false
 	state.dniHeaderStr = "wt-connector-"
     
     initialize()
+    
+    runEvery3Hours(registerNotification)
 }
 
 def updated() {
     log.debug "Updated with settings: ${settings}"
     initialize()
+    
+    unschedule(registerNotification)
+    runEvery3Hours(registerNotification)
 }
 
 def existChild(dni){
@@ -156,7 +195,6 @@ def takeTokenAuto(){
     names.each { name ->
     	refreshToken(name)
     }
-	
 }
 
 def authError() {
@@ -320,7 +358,83 @@ def renderConfig() {
 }
 
 def nofiyData(){
+	log.debug request.JSON
+	def data = request.JSON
+    def device = getSleepDevice(data.deviceid)
+    if(device){
+    	if(data.appli == "50" || data.appli == "51"){
+    		device.sendEvent(name:"sleeping", value: (data.appli == "50" ? "sleeping" : "not sleeping"))
+        }
+    }
     render contentType: "text/plain", data:  "Done"
+}
+
+def registerNotification(){
+	if(!state.tryRegisterNotification){
+    	return
+    }
+    
+	def config = getConfigData(getChildUserName())
+    
+    try {
+        httpPostJson("https://fison67.duckdns.org/wt/registerNotify/${app.id}", config) { resp ->
+        	if(resp.status == 200){
+        		def result = resp.data
+                state.registerResult = result
+                if(result.err){
+                	state.tryRegisterNotification = false
+            		log.warn result.err
+                }else{
+                	state.allowedNotificationApp = true
+            		log.info "Success to register notification"
+                }
+            }else{
+            	log.warn "Failed to register notification"
+            }
+        }
+    } catch (e) {
+        log.warn "Failed to register notification: $e"
+    }
+}
+
+
+def getConfigData(name){
+	return new groovy.json.JsonOutput().toJson([
+    	"smartthings": [
+        	"url": apiServerUrl("/api/smartapps/installations/"),
+            "access_token": state.accessToken,
+        	"appid": "${app.id}"
+        ],
+        "withings":[
+            "client_id": "${settings.client_id}",
+            "access_token": state["${name}_at"],
+        ]
+    ])
+}
+
+def getChildUserName(){
+	def list = getChildDevices()
+    def username = null
+    list.each { child ->
+    	try{
+            if(child.getUserName() != null){
+				username = child.getUserName()
+            }
+        }catch(err){}
+    }
+    return username
+}
+
+def getSleepDevice(deviceId){
+	def list = getChildDevices()
+    def device = null
+    list.each { child ->
+    	def tmp = child.getDeviceNetworkId().split("-")
+        if(tmp[3] == deviceId){
+        	device = child
+        }
+    }
+    return device
 }
 
 mappings {
@@ -328,14 +442,11 @@ mappings {
         path("/config")                         { action: [GET: "authError"] }
         path("/request")                         { action: [GET: "authError"]  }
         path("/request")                         { action: [POST: "authError"]  }
-        path("/notify")                         { action: [GET: "authError"]  }
         path("/notify")                         { action: [POST: "authError"]  }
-
     } else {
         path("/config")                         { action: [GET: "renderConfig"]  }
         path("/request")                         { action: [GET: "request"]  }
         path("/request")                         { action: [POST: "request"]  }
-        path("/notify")                         { action: [GET: "nofiyData"]  }
         path("/notify")                         { action: [POST: "nofiyData"]  }
     }
 }
