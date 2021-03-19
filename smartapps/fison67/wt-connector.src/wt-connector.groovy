@@ -1,5 +1,5 @@
 /**
- *  WT Connector (v.0.0.4)
+ *  WT Connector (v.0.0.5)
  *
  * MIT License
  *
@@ -373,28 +373,39 @@ def registerNotification(){
 	if(!state.tryRegisterNotification){
     	return
     }
+    def usernames = getChildUserNames()
     
-	def config = getConfigData(getChildUserName())
-    
-    try {
-        httpPostJson("https://fison67.duckdns.org/wt/registerNotify/${app.id}", config) { resp ->
-        	if(resp.status == 200){
-        		def result = resp.data
-                state.registerResult = result
-                if(result.err){
-                	state.tryRegisterNotification = false
-            		log.warn result.err
+    for(def idx=0; idx<usernames.size(); idx++){
+        def config = getConfigData(usernames[idx])
+        
+        try {
+            httpPostJson("https://fison67.duckdns.org/wt/registerNotify/${app.id}", config) { resp ->
+                if(resp.status == 200){
+                    def result = resp.data
+                    log.info "Register Notification [${usernames[idx]}] >> ${result}" 
+                    state.registerResult = result
+                    if(result.err){
+                    	try{
+                            if(result.err[0] == "Not allowed user. Ask a fison67"){
+                                state.tryRegisterNotification = false
+                            }
+                        }catch(err){
+                        	log.error err
+                        }
+                        log.warn result.err
+                    }else{
+                        state.allowedNotificationApp = true
+                        log.info "Success to register notification"
+                    }
                 }else{
-                	state.allowedNotificationApp = true
-            		log.info "Success to register notification"
+                    log.warn "Failed to register notification"
                 }
-            }else{
-            	log.warn "Failed to register notification"
             }
+        } catch (e) {
+            log.warn "Failed to register notification: $e"
         }
-    } catch (e) {
-        log.warn "Failed to register notification: $e"
     }
+	
 }
 
 
@@ -412,17 +423,17 @@ def getConfigData(name){
     ])
 }
 
-def getChildUserName(){
+def getChildUserNames(){
 	def list = getChildDevices()
-    def username = null
+    def usernames = []
     list.each { child ->
     	try{
-            if(child.getUserName() != null){
-				username = child.getUserName()
+            if(child.getDeviceNetworkId().startsWith("wt-connector-person-") && child.getUserName() != null){
+				usernames.push(child.getUserName())
             }
         }catch(err){}
     }
-    return username
+    return usernames
 }
 
 def getSleepDevice(deviceId){
