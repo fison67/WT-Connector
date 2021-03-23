@@ -177,11 +177,12 @@ def existChild(dni){
 def initialize() {
 	log.debug "initialize"
 	unschedule()
-    schedule("0 */12 * * * ?", takeTokenAuto)
+//    schedule("0 */60 * * * ?", takeTokenAuto)
+	runEvery3Hours(takeTokenAuto)
 }
 
 def takeTokenAuto(){
-	log.debug "Try to a new Access Token by Refresh Token per 12 hours."
+	log.debug "Try to a new Access Token by Refresh Token per 3 hours."
     
     def names = []
     def list = getChildDevices()
@@ -234,6 +235,7 @@ def registerNotifyListener(appli){
 }
 
 def refreshToken(name){
+
 	try {
     	def param = [
         	uri: "https://account.withings.com/oauth2/token",
@@ -244,7 +246,9 @@ def refreshToken(name){
                 "refresh_token": "${getAccountRefreshToken(name)}",
             ]
         ]
+        log.debug param.body
         httpPost(param) { resp ->
+        	log.debug resp.data
         	processRefreshToken(name, resp)
         }
     } catch (e) {
@@ -266,8 +270,14 @@ def processToken(resp){
 }
 
 def processRefreshToken(userName, resp){
-    state["${userName}_at"] = resp.data.access_token
-    state["${userName}_rt"] = resp.data.refresh_token
+    if(resp.data["access_token"] != null){
+    	log.warn "Set Access Token: ${resp.data.access_token}"
+    	state["${userName}_at"] = resp.data.access_token
+    }
+    if(resp.data["refresh_token"] != null && resp.data["refresh_token"] != ""){
+    	log.warn "Set Refresh Token: ${resp.data.refresh_token}"
+    	state["${userName}_rt"] = resp.data.refresh_token
+    }
 }
 
 def getAccountAccessToken(userName){
@@ -305,15 +315,17 @@ def getDeviceData(){
                     def dni = "wt-connector-${userName}-${device.deviceid}"
                     def exist = existChild(dni)
                     def dth = ""
+                    def namespace = "fison67"
                     if(device.type == "Sleep Monitor"){
                        dth = "Withings Sleep Sensor"
+                       namespace = "streamorange58819"
                     }else if(device.type == "Scale"){
                        dth = "Withings Scale"
                     }
                     
                     if(!exist && dth != ""){
                         try{
-                            def childDevice = addChildDevice("fison67", dth, dni, location.hubs[0].id, [
+                            def childDevice = addChildDevice(namespace, dth, dni, location.hubs[0].id, [
                                 "label": dth + " " + userName
                             ])    
                             childDevice.setID(device.deviceid)
