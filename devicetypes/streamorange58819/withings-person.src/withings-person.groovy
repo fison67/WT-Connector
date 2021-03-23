@@ -1,5 +1,5 @@
 /**
- *  Withings Person (v.0.0.2)
+ *  Withings Person (v.0.0.3)
  *
  * MIT License
  *
@@ -68,7 +68,7 @@ def getUserName(){
 }
 
 def refresh(){
-	log.debug "Refresh"
+	log.debug "Refresh Token: ${parent.getAccountAccessToken(userName)}"
     getUserHealth()
 }
 
@@ -87,29 +87,43 @@ def getUserHealth(){
             "enddateymd": start
         ]
     ]
+    
     httpPost(params) { resp ->
     	if(resp.status == 200){
-            def result =  resp.data//new JsonSlurper().parseText(resp.data.text)
+            def result =  resp.data
+            
             if(result.status == 0){
-                log.debug result
-                def data = result.body.activities[0]
-
-                try{ sendEvent(name:"calories", value: data.calories as int ) }catch(err){log.error err}
-                try{ sendEvent(name:"distance", value: data.distance as int ) }catch(err){}
-                try{ sendEvent(name:"steps", value: data.steps as int ) }catch(err){log.error err}
-                try{ sendEvent(name:"totalcalories", value: data.totalcalories as int) }catch(err){}
-                try{ sendEvent(name:"active", value: data.active as int) }catch(err){}
-                try{ sendEvent(name:"elevation", value: data.elevation ) }catch(err){}
-                try{ sendEvent(name:"intense", value: data.intense ) }catch(err){}
-                try{ sendEvent(name:"moderate", value: data.moderate ) }catch(err){}
-                try{ sendEvent(name:"soft", value: data.soft ) }catch(err){}
+				def calories=0, distance=0, steps=0, totalcalories=0, active=0, elevation=0, intense=0, moderate=0, soft=0
+                for(def i=0; i<result.body.activities.size(); i++){
+                	def data = result.body.activities[i]
+                    log.debug data
+                	calories += data.calories as int
+                	distance += data.distance as int
+                	steps += data.steps as int
+                	totalcalories += data.totalcalories as int
+                	active += data.active as int
+                	elevation += data.elevation as int
+                	intense += data.intense as int
+                	moderate += data.moderate as int
+                	soft += data.soft as int
+                }
+                
+                sendEvent(name:"calories", value:  calories)
+                sendEvent(name:"distance", value: distance)
+                sendEvent(name:"steps", value: steps)
+                sendEvent(name:"totalcalories", value: totalcalories)
+                sendEvent(name:"active", value: active)
+                sendEvent(name:"elevation", value: elevation)
+				sendEvent(name:"intense", value: intense)
+				sendEvent(name:"moderate", value: moderate)
+                sendEvent(name:"soft", value: data.soft)
             }else{
                 log.warn "request refresh token"
                 parent.refreshToken(userName)
             }
         }else{
             log.warn "request refresh token"
-            parent.refreshToken(state._name)
+            parent.refreshToken(userName)
         }
     }
     
